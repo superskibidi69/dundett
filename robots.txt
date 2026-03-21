@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dundett.pages.dev/sitemap.xml
