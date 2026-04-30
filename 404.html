@@ -1,4 +1,249 @@
-<!-- 404.html -->
-<h1>404</h1>
-<p>You've wandered into the dark. No grue here, just a missing page.</p>
-<a href="/">Return to DUNDETT</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            font-family: 'Courier New', monospace;
+            color: #3aff3a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Scanlines */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                rgba(0, 255, 0, 0.03) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            animation: scanMove 0.2s linear infinite;
+        }
+
+        @keyframes scanMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        .scanlines::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0; }
+            50% { opacity: 0.05; }
+            100% { opacity: 0; }
+        }
+
+        /* CRT Power-On Line */
+        .crt-line {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(58, 255, 58, 0.3);
+            z-index: 1000;
+            pointer-events: none;
+            animation: crtRoll 8s linear infinite;
+            box-shadow: 0 0 20px rgba(58, 255, 58, 0.2);
+        }
+
+        @keyframes crtRoll {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+
+        .container {
+            max-width: 700px;
+            width: 90%;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* The Grue's Eye */
+        .grue-eye {
+            width: 80px;
+            height: 40px;
+            margin: 0 auto 2rem auto;
+            position: relative;
+        }
+
+        .grue-eye svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pupil {
+            animation: pupilShift 6s infinite ease-in-out;
+        }
+
+        @keyframes pupilShift {
+            0%, 100% { transform: translate(0, 0); }
+            15% { transform: translate(8px, 0); }
+            30% { transform: translate(-4px, -2px); }
+            45% { transform: translate(0, 6px); }
+            60% { transform: translate(-8px, 0); }
+            75% { transform: translate(4px, -4px); }
+            90% { transform: translate(0, 0); }
+        }
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 8px;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 10px #3aff3a;
+            animation: textGlitch 4s infinite;
+        }
+
+        @keyframes textGlitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(0); }
+        }
+
+        .error-box {
+            border: 1px solid #2a4a2a;
+            border-radius: 8px;
+            background: #0a1f0a;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .error-box p {
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+            color: #6aff6a;
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #3aff3a;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .btn {
+            display: inline-block;
+            background: #1a2a1a;
+            border: 1px solid #3aff3a;
+            color: #3aff3a;
+            padding: 0.8rem 2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .btn:hover {
+            background: #2a3a2a;
+            box-shadow: 0 0 15px #3aff3a;
+        }
+
+        .btn::after {
+            content: "";
+            position: absolute;
+            top: -2px; left: -2px;
+            right: -2px; bottom: -2px;
+            border: 1px solid rgba(58, 255, 58, 0.3);
+            border-radius: 6px;
+            animation: btnPulse 2s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes btnPulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .quote {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #4a6a4a;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    <div class="crt-line"></div>
+
+    <div class="container">
+        <!-- The Grue's Eye -->
+        <div class="grue-eye">
+            <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+                <!-- Eye background (dark) -->
+                <ellipse cx="60" cy="30" rx="55" ry="25" fill="#0a0a0a" stroke="#2a4a2a" stroke-width="1.5"/>
+                <!-- Iris glow -->
+                <ellipse cx="60" cy="30" rx="20" ry="18" fill="#1a3a1a" opacity="0.6">
+                    <animate attributeName="rx" values="20;22;20" dur="4s" repeatCount="indefinite"/>
+                </ellipse>
+                <!-- Pupil -->
+                <g class="pupil">
+                    <ellipse cx="60" cy="30" rx="8" ry="14" fill="#3aff3a">
+                        <animate attributeName="ry" values="14;6;14" dur="4s" repeatCount="indefinite"/>
+                    </ellipse>
+                    <!-- Pupil glow -->
+                    <ellipse cx="60" cy="30" rx="4" ry="6" fill="#6aff6a" opacity="0.5"/>
+                </g>
+            </svg>
+        </div>
+
+        <h1>404 NOT FOUND</h1>
+        
+        <div class="error-box">
+            <p>YOU HAVE WANDERED INTO THE DARK.</p>
+            <p>NO GRUE HERE,<span class="cursor-blink"></span></p>
+            <p style="font-size: 0.85rem; color: #4a6a4a; margin-top: 1rem;">JUST A MISSING PAGE.</p>
+        </div>
+
+        <a href="/" class="btn">RETURN TO HOME</a>
+
+        <div class="quote">
+            "Tall royal palms are spaced equidistantly. This page is not."
+        </div>
+    </div>
+</body>
+</html>
