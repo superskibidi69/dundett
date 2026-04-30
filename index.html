@@ -32,358 +32,151 @@
     <meta name="twitter:image" content="/media/GRUE.jpeg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DUNDETT">
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": "DUNDETT",
-  "url": "https://dundett.pages.dev",
-  "description": "A text adventure game for the TI-84 Plus CE calculator. Explore caves, befriend (or anger) a bear, avoid the Grue, log into a Windows XP computer, and discover the mystery of Thomas Stock on Maple Street.",
-  "applicationCategory": "Game",
-  "operatingSystem": "TI-84 Plus CE",
-  "author": {
-    "@type": "Person",
-    "name": "superfood"
-  },
-  "datePublished": "2026-03-07",
-  "version": "1.3.4",
-  "genre": ["Text Adventure", "Horror", "Puzzle", "Interactive Fiction"],
-  "gamePlatform": ["TI-84 Plus CE", "Calculator", "Web Browser"],
-  "numberOfPlayers": {
-    "@type": "QuantitativeValue",
-    "value": 1
-  },
-  "playMode": "SinglePlayer",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "keywords": "TI-84, calculator game, text adventure, dunnet, grue, bear, horror, mystery, suburbs, lore, sad",
-  "character": [
+    <script type="application/ld+json">
     {
-      "@type": "Person",
-      "name": "Thomas Stock",
-      "description": "The protagonist. A 12-year-old boy who discovered the door behind the Altar and disappeared. You wake up as him on Maple Street."
-    },
-    {
-      "@type": "Thing",
-      "name": "The Grue",
-      "description": "A creature that lurks in the dark. Or perhaps a security system controlled by Mr. Smith. It devours those who enter pitch-black rooms."
-    },
-    {
-      "@type": "Person",
-      "name": "Mr. Smith",
-      "description": "System administrator and tech office manager. He controls the Grue and warns Thomas to stop poking around. Room 101 is his domain."
-    },
-    {
-      "@type": "Thing",
-      "name": "The Bear",
-      "description": "A ferocious bear blocking the path. Feed it to receive a key, or face its wrath."
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "DUNDETT",
+      "url": "https://dundett.pages.dev",
+      "description": "A text adventure game for the TI-84 Plus CE calculator. Explore caves, befriend (or anger) a bear, avoid the Grue, log into a Windows XP computer, and discover the mystery of Thomas Stock on Maple Street.",
+      "applicationCategory": "Game",
+      "operatingSystem": "TI-84 Plus CE",
+      "author": { "@type": "Person", "name": "superfood" },
+      "datePublished": "2026-03-07",
+      "version": "1.3.4",
+      "genre": ["Text Adventure", "Horror", "Puzzle", "Interactive Fiction"],
+      "gamePlatform": ["TI-84 Plus CE", "Calculator", "Web Browser"],
+      "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
+      "playMode": "SinglePlayer",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "keywords": "TI-84, calculator game, text adventure, dunnet, grue, bear, horror, mystery, suburbs, lore, sad",
+      "character": [
+        { "@type": "Person", "name": "Thomas Stock", "description": "The protagonist. A 12-year-old boy who discovered the door behind the Altar and disappeared. You wake up as him on Maple Street." },
+        { "@type": "Thing", "name": "The Grue", "description": "A creature that lurks in the dark. Or perhaps a security system controlled by Mr. Smith. It devours those who enter pitch-black rooms." },
+        { "@type": "Person", "name": "Mr. Smith", "description": "System administrator and tech office manager. He controls the Grue and warns Thomas to stop poking around. Room 101 is his domain." },
+        { "@type": "Thing", "name": "The Bear", "description": "A ferocious bear blocking the path. Feed it to receive a key, or face its wrath." }
+      ],
+      "isBasedOn": { "@type": "VideoGame", "name": "Dunnet", "description": "A text adventure game built into Emacs by Ron Schnell, where the player explores a surreal world to find treasure." }
     }
-  ],
-  "subjectOf": [
-    {
-      "@type": "CreativeWork",
-      "name": "DUNDETT v1.3.4 Changelog",
-      "description": "Added the School computer lab with a partially interactive Windows XP desktop, CAPTCHA verification, Thomas's files, and emails from Mr. Smith."
-    }
-  ],
-  "isBasedOn": {
-    "@type": "VideoGame",
-    "name": "Dunnet",
-    "description": "A text adventure game built into Emacs by Ron Schnell, where the player explores a surreal world to find treasure."
-  },
-  "additionalProperty": [
-    {
-      "@type": "PropertyValue",
-      "name": "Memory Fragments",
-      "value": "5 collectible fragments hidden throughout the Suburbs that reveal Thomas's story."
-    },
-    {
-      "@type": "PropertyValue",
-      "name": "FUN Value",
-      "value": "A random number (1-100) generated each game that affects secrets, encounters, and puzzles."
-    },
-    {
-      "@type": "PropertyValue",
-      "name": "Room 101",
-      "value": "A locked room in the School. Mr. Smith's domain. Teased but not yet accessible."
-    }
-  ]
-}
-</script>
+    </script>
     <title>DUNDETT | TI-84 Plus CE GAME</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0a0a;
             font-family: 'Courier New', monospace;
             color: #3aff3a;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; overflow-x: hidden;
         }
-
-        /* Animated Scanlines Overlay */
+        /* ── IMPROVED SCANLINES (from 404) ── */
         .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 999;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 255, 0, 0.03) 0px,
-                rgba(0, 255, 0, 0.03) 2px,
-                transparent 2px,
-                transparent 4px
-            );
-            animation: scanMove 0.2s linear infinite;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 999;
+            background: repeating-linear-gradient(0deg,
+                rgba(0,255,0,0.025) 0px, rgba(0,255,0,0.025) 2px,
+                transparent 2px, transparent 4px);
+            animation: scanMove 0.25s linear infinite;
         }
-
         @keyframes scanMove {
-            0% {
-                transform: translateY(0);
-            }
-            100% {
-                transform: translateY(4px);
-            }
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
         }
-
         .scanlines::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            animation: flicker 0.15s infinite;
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.12); opacity: 0;
+            animation: flicker 0.18s infinite;
         }
-
         @keyframes flicker {
-            0% { opacity: 0; }
-            50% { opacity: 0.05; }
-            100% { opacity: 0; }
+            0% { opacity: 0; } 50% { opacity: 0.04; } 100% { opacity: 0; }
         }
-
+        /* ── CRT ROLLING LINE ── */
+        .crt-line {
+            position: fixed; top: 50%; left: 0; width: 100%; height: 2px;
+            background: rgba(58,255,58,0.25); z-index: 1000; pointer-events: none;
+            animation: crtRoll 8s linear infinite;
+            box-shadow: 0 0 18px rgba(58,255,58,0.15);
+        }
+        @keyframes crtRoll {
+            0% { top: -5%; } 100% { top: 105%; }
+        }
+        /* ── TEXT GLITCH ── */
+        .glitch {
+            animation: textGlitch 4.5s infinite;
+        }
+        @keyframes textGlitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(0); }
+        }
         .container {
-            max-width: 700px;
-            width: 90%;
-            padding: 2rem;
-            text-align: center;
-            position: relative;
-            z-index: 1;
+            max-width: 700px; width: 90%; padding: 2rem; text-align: center;
+            position: relative; z-index: 1;
         }
-
         h1 {
-            font-size: 2rem;
-            letter-spacing: 4px;
-            margin-bottom: 0.5rem;
+            font-size: 2rem; letter-spacing: 4px; margin-bottom: 0.5rem;
             text-shadow: 0 0 5px #3aff3a;
         }
-
-        .bytes {
-            font-size: 0.8rem;
-            color: #6aff6a;
-            margin-bottom: 2rem;
-        }
-
         .video-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            margin-bottom: 2rem;
-            border: 1px solid #2a4a2a;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
+            position: relative; padding-bottom: 56.25%; height: 0; margin-bottom: 2rem;
+            border: 1px solid #2a4a2a; border-radius: 8px; overflow: hidden; background: #000;
         }
-
         .video-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: #000;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; background: #000;
         }
-
         .info-section {
-            text-align: left;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            border: 1px solid #2a4a2a;
-            border-radius: 8px;
-            background: #0a1f0a;
+            text-align: left; margin-bottom: 2rem; padding: 1rem;
+            border: 1px solid #2a4a2a; border-radius: 8px; background: #0a1f0a;
         }
-
-        .info-section h3 {
-            font-size: 1rem;
-            margin-bottom: 0.8rem;
-            color: #6aff6a;
-            letter-spacing: 1px;
-        }
-
-        .info-section p {
-            font-size: 0.85rem;
-            line-height: 1.5;
-            margin-bottom: 0.8rem;
-            color: #3aff3a;
-        }
-
-        .feature-list {
-            list-style: none;
-            margin-top: 0.5rem;
-        }
-
-        .feature-list li {
-            font-size: 0.8rem;
-            margin-bottom: 0.4rem;
-            padding-left: 1.2rem;
-            position: relative;
-        }
-
-        .feature-list li i {
-            position: absolute;
-            left: 0;
-            top: 0.2rem;
-            font-size: 0.7rem;
-            color: #3aff3a;
-        }
-
+        .info-section h3 { font-size: 1rem; margin-bottom: 0.8rem; color: #6aff6a; letter-spacing: 1px; }
+        .info-section p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.8rem; color: #3aff3a; }
+        .feature-list { list-style: none; margin-top: 0.5rem; }
+        .feature-list li { font-size: 0.8rem; margin-bottom: 0.4rem; padding-left: 1.2rem; position: relative; }
+        .feature-list li i { position: absolute; left: 0; top: 0.2rem; font-size: 0.7rem; color: #3aff3a; }
         .btn {
-            display: inline-block;
-            background: #1a2a1a;
-            border: 1px solid #3aff3a;
-            color: #3aff3a;
-            padding: 0.8rem 2rem;
-            font-family: 'Courier New', monospace;
-            font-size: 1rem;
-            text-decoration: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin: 0.5rem;
+            display: inline-block; background: #1a2a1a; border: 1px solid #3aff3a;
+            color: #3aff3a; padding: 0.8rem 2rem; font-family: 'Courier New', monospace;
+            font-size: 1rem; text-decoration: none; border-radius: 4px; cursor: pointer;
+            transition: all 0.2s; margin: 0.5rem;
         }
-
-        .btn i {
-            margin-right: 8px;
-        }
-
-        .btn:hover {
-            background: #2a3a2a;
-            box-shadow: 0 0 10px #3aff3a;
-        }
-
-        /* Newsletter embed styling */
-        .newsletter {
-            margin: 2rem 0;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #0a1f0a;
-            border: 1px solid #2a4a2a;
-        }
-
-        .newsletter iframe {
-            display: block;
-            width: 100%;
-            height: 320px;
-            border: none;
-        }
-
+        .btn i { margin-right: 8px; }
+        .btn:hover { background: #2a3a2a; box-shadow: 0 0 10px #3aff3a; }
+        .newsletter { margin: 2rem 0; border-radius: 16px; overflow: hidden; background: #0a1f0a; border: 1px solid #2a4a2a; }
+        .newsletter iframe { display: block; width: 100%; height: 320px; border: none; }
         .teaser {
-            text-align: left;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid #2a4a2a;
-            border-radius: 8px;
-            background: #0a1f0a;
+            text-align: left; padding: 1rem; margin-bottom: 1rem;
+            border: 1px solid #2a4a2a; border-radius: 8px; background: #0a1f0a;
         }
-
-        .teaser h3 {
-            color: #6aff6a;
-            margin-bottom: 0.8rem;
-        }
-
-        .teaser p {
-            font-size: 0.85rem;
-            line-height: 1.5;
-            margin-bottom: 0.8rem;
-        }
-
-        .teaser ul {
-            list-style: none;
-            margin: 0.5rem 0;
-        }
-
-        .teaser li {
-            font-size: 0.8rem;
-            margin-bottom: 0.3rem;
-            padding-left: 1.2rem;
-            position: relative;
-        }
-
-        .teaser li i {
-            position: absolute;
-            left: 0;
-            top: 0.2rem;
-            font-size: 0.7rem;
-            color: #3aff3a;
-        }
-
-        .quote {
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            color: #6aff6a;
-            font-style: italic;
-        }
-
-        .footer {
-            margin-top: 2rem;
-            font-size: 0.7rem;
-            color: #4aaf4a;
-        }
-
-        hr {
-            border-color: #2a4a2a;
-            margin: 1.5rem 0;
-        }
+        .teaser h3 { color: #6aff6a; margin-bottom: 0.8rem; }
+        .teaser p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.8rem; }
+        .teaser ul { list-style: none; margin: 0.5rem 0; }
+        .teaser li { font-size: 0.8rem; margin-bottom: 0.3rem; padding-left: 1.2rem; position: relative; }
+        .teaser li i { position: absolute; left: 0; top: 0.2rem; font-size: 0.7rem; color: #3aff3a; }
+        .quote { margin-top: 2rem; font-size: 0.9rem; color: #6aff6a; font-style: italic; }
+        hr { border-color: #2a4a2a; margin: 1.5rem 0; }
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
+    <div class="crt-line"></div>
 
     <div class="container">
-        <h1>DUNDETT</h1>
+        <h1 class="glitch">DUNDETT</h1>
 
         <div class="video-container">
-            <video 
-                poster="/media/trailer.png" 
-                controls 
-                preload="auto"
-                controlsList="nodownload noremoteplayback" 
-                disablePictureInPicture>
+            <video poster="/media/trailer.png" controls preload="auto"
+                controlsList="nodownload noremoteplayback" disablePictureInPicture>
                 <source src="/media/dundett_trailer.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
         </div>
 
         <div class="info-section">
-            <h3><i class="fas fa-terminal"></i> ABOUT THE GAME</h3>
+            <h3 class="glitch"><i class="fas fa-terminal"></i> ABOUT THE GAME</h3>
             <p>DUNDETT is a text adventure for the TI-84 Plus CE. Explore caves, befriend (or anger) a bear, avoid the grue, and discover the secrets hidden within.</p>
             <ul class="feature-list">
                 <li><i class="fas fa-caret-right"></i> Feed the bear, or face the consequences</li>
@@ -393,13 +186,14 @@
             </ul>
         </div>
 
-        <!-- Download Buttons -->
-        <a href="https://www.cemetech.net/downloads/files/2884/x3889" class="btn" download><i class="fas fa-download"></i> DOWNLOAD GAME</a>
+        <a href="https://www.cemetech.net/downloads/files/2884/x3889" class="btn" download>
+            <i class="fas fa-download"></i> DOWNLOAD GAME
+        </a>
 
         <hr>
 
-      <div class="teaser">
-            <h3><i class="fas fa-computer"></i> WELCOME TO WINDOWS XP</h3>
+        <div class="teaser">
+            <h3 class="glitch"><i class="fas fa-computer"></i> WELCOME TO WINDOWS XP</h3>
             <p>The school door was ajar. Inside, a single monitor glows in the dark computer lab. Thomas Stock's desktop awaits.</p>
             <p><strong>What's new in v1.3.4?</strong></p>
             <ul>
@@ -412,16 +206,9 @@
             <p>Download it. The grue is watching. It will find you if you don't.</p>
         </div>
 
-        <!-- Substack Embed (rounded, inline) -->
         <div class="newsletter">
-            <iframe 
-                src="https://superskibidi69.substack.com/embed" 
-                width="100%" 
-                height="320" 
-                frameborder="0" 
-                scrolling="no"
-                style="display: block;"
-            ></iframe>
+            <iframe src="https://superskibidi69.substack.com/embed" width="100%" height="320"
+                frameborder="0" scrolling="no" style="display: block;"></iframe>
         </div>
 
         <div class="quote">
