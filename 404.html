@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 Not Found</title>
+    <meta name='robots' content='noindex'>
     <style>
         * {
             margin: 0;
@@ -99,21 +100,8 @@
 
         .grue-eye svg {
             width: 100%;
+            animation: grueBlink 6s infinite;
             height: 100%;
-        }
-
-        .pupil {
-            animation: pupilShift 6s infinite ease-in-out;
-        }
-
-        @keyframes pupilShift {
-            0%, 100% { transform: translate(0, 0); }
-            15% { transform: translate(8px, 0); }
-            30% { transform: translate(-4px, -2px); }
-            45% { transform: translate(0, 6px); }
-            60% { transform: translate(-8px, 0); }
-            75% { transform: translate(4px, -4px); }
-            90% { transform: translate(0, 0); }
         }
 
         h1 {
@@ -139,6 +127,10 @@
             margin-bottom: 2rem;
             position: relative;
         }
+@keyframes grueBlink {
+    0%, 95%, 100% { transform: scaleY(1); }
+    96%, 99% { transform: scaleY(0.05); }
+}
 
         .error-box p {
             font-size: 1rem;
@@ -162,6 +154,11 @@
             50% { opacity: 0; }
         }
 
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
         .btn {
             display: inline-block;
             background: #1a2a1a;
@@ -175,6 +172,7 @@
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            animation: pulse 2s infinite;
         }
 
         .btn:hover {
@@ -231,12 +229,12 @@
             </svg>
         </div>
 
-        <h1>404 NOT FOUND</h1>
+        <h1>404 Grue Not Found</h1>
         
         <div class="error-box">
-            <p>YOU HAVE WANDERED INTO THE DARK.</p>
-            <p>NO GRUE HERE,<span class="cursor-blink"></span></p>
-            <p style="font-size: 0.85rem; color: #4a6a4a; margin-top: 1rem;">JUST A MISSING PAGE.</p>
+            <p>You have wandered into the dark.</p>
+            <p>No grue here,<span class="cursor-blink"></span></p>
+            <p style="font-size: 0.85rem; color: #4a6a4a; margin-top: 1rem;">Just a missing page.</p>
         </div>
 
         <a href="/" class="btn">RETURN TO HOME</a>
@@ -245,5 +243,102 @@
             "Tall royal palms are spaced equidistantly. This page is not."
         </div>
     </div>
+    <script>
+        const quotes = [
+    '"Tall royal palms are spaced equidistantly. This page is not."',
+    '"You hear breathing."',
+    '"The grue is close."',
+    '"You are likely to be eaten by a 404."',
+    '"You step back from the 404."',
+    '"Room 101 is off limits. So is this URL."',
+    '"SOMETHING MOVES. But not this page."'
+];
+let quoteIndex = 0;
+document.querySelector('.quote').addEventListener('dblclick', () => {
+    quoteIndex = (quoteIndex + 1) % quotes.length;
+    document.querySelector('.quote').textContent = quotes[quoteIndex];
+});
+
+const konami = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','KeyB','KeyA'];
+let konamiIndex = 0;
+document.addEventListener('keydown', (e) => {
+    if (e.code === konami[konamiIndex]) {
+        konamiIndex++;
+        if (konamiIndex === konami.length) {
+            window.location.href = '/';
+            konamiIndex = 0;
+        }
+    } else { konamiIndex = 0; }
+});
+document.addEventListener('mousemove', (e) => {
+    const eye = document.querySelector('.grue-eye');
+    if (!eye) return;
+    const rect = eye.getBoundingClientRect();
+    const eyeCenterX = rect.left + rect.width / 2;
+    const eyeCenterY = rect.top + rect.height / 2;
+    
+    // Calculate how far mouse is from eye center (normalized -1 to 1)
+    const dx = Math.max(-1, Math.min(1, (e.clientX - eyeCenterX) / (window.innerWidth / 3)));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - eyeCenterY) / (window.innerHeight / 3)));
+    
+    // Apply smooth movement to pupil
+    const pupil = eye.querySelector('.pupil');
+    if (pupil) {
+        pupil.style.transform = `translate(${dx * 10}px, ${dy * 6}px)`;
+        pupil.style.transition = 'transform 0.15s ease-out';
+    }
+    
+    // Subtle iris dilation based on mouse distance from eye
+    const distance = Math.sqrt(dx*dx + dy*dy);
+    const iris = eye.querySelector('ellipse[fill="#1a3a1a"]');
+    if (iris) {
+        const baseRx = 20;
+        const dilation = distance * 3;
+        iris.setAttribute('rx', baseRx + dilation);
+    }
+});
+// ── RANDOM CREEPY MESSAGE (25% chance) ──
+const creepyMessages = [
+    "IT KNOWS YOU'RE HERE.",
+    "DON'T LOOK BEHIND YOU.",
+    "THE PAGE IS GONE. YOU ARE NOT.",
+    "404: GRUE NOT FOUND.",
+    "THIS IS NOT THE PAGE YOU'RE LOOKING FOR.",
+    "THE DARK REMEMBERS YOU.",
+    "YOU'VE BEEN HERE BEFORE.",
+    "MAPLE STREET IS WAITING."
+];
+
+if (Math.random() < 0.25) {
+    const extra = document.createElement('p');
+    extra.style.cssText = 'font-size: 0.75rem; color: #3a5a3a; margin-top: 0.5rem; font-style: italic;';
+    extra.textContent = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
+    document.querySelector('.error-box').appendChild(extra);
+}
+let eyeHoverTimer;
+document.querySelector('.grue-eye').addEventListener('mouseenter', () => {
+    eyeHoverTimer = setTimeout(() => {
+        const whisper = document.createElement('p');
+        whisper.textContent = 'it sees you';
+        whisper.style.cssText = 'position:absolute;top:100%;left:50%;transform:translateX(-50%);font-size:0.6rem;color:#3a5a3a;font-style:italic;animation:fadeInOut 2s forwards;pointer-events:none;';
+        document.querySelector('.grue-eye').appendChild(whisper);
+        setTimeout(() => whisper.remove(), 2000);
+    }, 3000);
+});
+document.querySelector('.grue-eye').addEventListener('mouseleave', () => {
+    clearTimeout(eyeHoverTimer);
+});
+let visits = parseInt(localStorage.getItem('dundett_404_visits') || 0);
+visits++;
+localStorage.setItem('dundett_404_visits', visits);
+
+if (visits >= 3) {
+    const msg = document.createElement('p');
+    msg.style.cssText = 'font-size:0.7rem;color:#3a5a3a;margin-top:1rem;font-style:italic;';
+    msg.textContent = visits >= 10 ? 'You have been here ' + visits + ' times. The Grue expects you now.' : 'You keep ending up here. Are you lost, or are you looking for something?';
+    document.querySelector('.error-box').appendChild(msg);
+}
+
+    </script>
 </body>
 </html>

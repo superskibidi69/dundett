@@ -71,17 +71,23 @@ const RAM_BANK_COUNT = 16;
 
 class Ti84Memory {
     constructor(romBuffer) {
-        const romArr = new Uint8Array(romBuffer);
-        this.romSize = romArr.length;
+        this.romSize = romBuffer ? romBuffer.length : 0;
         this.romBanks = [];
         this.fixedRom = new Uint8Array(BANK_SIZE);
-        if (romArr.length > BANK_SIZE) {
-            for (let i = 0; i < romArr.length; i += BANK_SIZE) {
-                this.romBanks.push(romArr.slice(i, i + BANK_SIZE));
+        if (romBuffer) {
+            const romArr = new Uint8Array(romBuffer);
+            if (romArr.length > BANK_SIZE) {
+                for (let i = 0; i < romArr.length; i += BANK_SIZE) {
+                    this.romBanks.push(romArr.slice(i, i + BANK_SIZE));
+                }
+                this.fixedRom.set(this.romBanks[0]);
+            } else {
+                this.fixedRom.set(romArr.slice(0, BANK_SIZE));
+                this.romBanks.push(this.fixedRom);
             }
-            this.fixedRom.set(this.romBanks[0]);
         } else {
-            this.fixedRom.set(romArr.slice(0, BANK_SIZE));
+            // No ROM, fill with 0
+            this.fixedRom.fill(0);
             this.romBanks.push(this.fixedRom);
         }
         this.ramBanks = [];
@@ -208,7 +214,7 @@ function runCpu(instructions = 1000) {
         }
     } catch (e) {
         console.error('CPU exception', e);
-        console.error('PC:', cpu.r1?.pc?.toString(16) || 'unknown');
+        console.error('PC:', cpu?.pc?.toString(16) || 'unknown');
         console.error('Instruction count:', executed);
         cpu.halted = true;
         log(`CPU error: ${e.message || e}`);
@@ -231,6 +237,7 @@ function updateScreen() {
     // Read from TI-84 CE LCD buffer at 0xD40000 (24-bit address)
     const fb = 0xD40000;
     const imageData = ctx.createImageData(width, height);
+    let nonZeroPixels = 0;
 
     for (let pix = 0; pix < pixels; pix++) {
         const word = memory.read16(fb + pix * 2);
@@ -242,9 +249,11 @@ function updateScreen() {
         imageData.data[idx + 1] = g;
         imageData.data[idx + 2] = b;
         imageData.data[idx + 3] = 255;
+        if (word !== 0) nonZeroPixels++;
     }
 
     ctx.putImageData(imageData, 0, 0);
+    console.log(`updateScreen: ${nonZeroPixels} non-zero pixels out of ${pixels}`);
 }
 const statusEl = document.getElementById('status');
 let emu;
@@ -300,7 +309,10 @@ async function init() {
         };
         // Extend Z80 with eZ80 methods
         cpu.slp = function() {
-            // SLP (Sleep) - in emulation, just add cycles without halting
+            // SLP (Sleep) - halt until the next emulation tick / interrupt wake
+            this.halt();
+            // Advance past the SLP opcode so the next resume continues execution.
+            this.pc++;
             this.tStates += 4;
         };
         cpu.stmix = function() {
@@ -327,7 +339,7 @@ async function init() {
             this.tStates += 12;
         };
         console.log('Z80 created');
-        console.log('  PC:', cpu.r1.pc);
+        console.log('  PC:', cpu.pc);
         console.log('  A:', cpu.r1.a);
         console.log('  halted:', cpu.halted);
         emu = cpu;
@@ -340,12 +352,14 @@ async function init() {
         console.log('Extended read count after run:', memory.extendedReadCount);
         console.log('Extended write count after run:', memory.extendedWriteCount);
         console.log('LCD write count after run:', memory.lcdWriteCount);
-        // Continuous run with banking support
+        // Continuous run with banking support and wake-on-sleep
         setInterval(() => {
-            if (cpu && !cpu.halted) {
-                runCpu(1000);
-                updateScreen();
+            if (!cpu) return;
+            if (cpu.halted) {
+                cpu.halted = false;
             }
+            runCpu(1000);
+            updateScreen();
         }, 50);
         log(`Done. ${executed} instructions.`);
         setupKeypad();
