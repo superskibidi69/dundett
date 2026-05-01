@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUNDETT - Z80 Emulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Courier New', monospace; color: #3aff3a; }
+        .calc { background: #1a1a1a; border: 4px solid #3a3a3a; border-radius: 14px; padding: 18px; width: 520px; box-shadow: 0 0 40px rgba(58,255,58,0.15); }
+        .calc-brand { text-align: center; color: #4a4a4a; font-size: 9px; letter-spacing: 3px; margin-bottom: 8px; }
+        .screen { background: #0a1f0a; border: 3px solid #1a3a1a; border-radius: 6px; padding: 12px; width: 100%; height: auto; box-shadow: inset 0 0 25px rgba(0,0,0,0.6); position: relative; }
+    canvas { width: 100%; height: auto; image-rendering: pixelated; display: block; }
+        .screen::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, rgba(0,255,0,0.02) 0px, rgba(0,255,0,0.02) 2px, transparent 2px, transparent 4px); pointer-events: none; }
+        .status { margin-top: 8px; font-size: 9px; color: #4a6a4a; text-align: center; }
+        .btn { background: #1a2a1a; border: 2px solid #2a4a2a; color: #3aff3a; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 10px; cursor: pointer; border-radius: 4px; margin: 2px; }
+        .btn:hover { background: #2a3a2a; border-color: #3aff3a; box-shadow: 0 0 8px rgba(58,255,58,0.3); }
+        .keypad { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="calc">
+    <div class="calc-brand">TI-84 Plus CE ▸ DUNDETT Z80 EMULATOR</div>
+    <canvas class="screen" id="screen" width="320" height="240"></canvas>
+    <div class="keypad" id="keypad"></div>
+    <div class="status" id="status">STATUS: Starting...</div>
+</div>
+
+<script src="z80js.js"></script>
+<script>
+// Extend Z80 with eZ80 instructions
+Z80.prototype.opcodeTableED[0x39] = {
+    funcName: 'slp',
+    dasm: 'slp',
+    execute: function() {
+        this.halted = true;
+        this.tStates += 4;
+    }
+};
+Z80.prototype.opcodeTableED[0x7E] = {
+    funcName: 'stmix',
+    dasm: 'stmix',
+    execute: function() {
+        // Stack transfer - simplified implementation
+        this.tStates += 16;
+    }
+};
+Z80.prototype.opcodeTableED[0x76] = {
+    funcName: 'mlts',
+    dasm: 'mlts',
+    execute: function() {
+        // Multi-byte multiply signed - simplified
+        this.tStates += 32;
+    }
+};
+Z80.prototype.opcodeTableED[0x3C] = {
+    funcName: 'tstio',
+    dasm: 'tstio {0}',
+    args: [1],
+    execute: function(port) {
+        const val = this.io.read(port);
+        // Set flags based on I/O read
+        this.tStates += 12;
+    }
+};
+</script>
+<script>
+// ==================== TI-84 CE Z80 Integration ====================
+const BANK_SIZE = 0x4000;
+const RAM_BANK_COUNT = 16;
+
+class Ti84Memory {
+    constructor(romBuffer) {
+        const romArr = new Uint8Array(romBuffer);
+        this.romSize = romArr.length;
+        this.romBanks = [];
+        this.fixedRom = new Uint8Array(BANK_SIZE);
+        if (romArr.length > BANK_SIZE) {
+            for (let i = 0; i < romArr.length; i += BANK_SIZE) {
+                this.romBanks.push(romArr.slice(i, i + BANK_SIZE));
+            }
+            this.fixedRom.set(this.romBanks[0]);
+        } else {
+            this.fixedRom.set(romArr.slice(0, BANK_SIZE));
+            this.romBanks.push(this.fixedRom);
+        }
+        this.ramBanks = [];
+        for (let i = 0; i < RAM_BANK_COUNT; i++) {
+            this.ramBanks.push(new Uint8Array(BANK_SIZE));
+        }
+        this.reset();
+    }
+
+    reset() {
+        this.romPage = 1;
+        this.ramPage0 = 0;
+        this.ramPage1 = 1;
+    }
+
+    read8(addr) {
+        addr &= 0xFFFF;
+        if (addr < 0x4000) {
+            return this.fixedRom[addr];
+        }
+        if (addr < 0x8000) {
+            const bank = this.romPage;
+            const offset = addr - 0x4000;
+            return (this.romBanks[bank] && this.romBanks[bank][offset]) || 0;
+        }
+        if (addr < 0xC000) {
+            const bank = this.ramPage0;
+            const offset = addr - 0x8000;
+            return this.ramBanks[bank] ? this.ramBanks[bank][offset] : 0;
+        }
+        const bank = this.ramPage1;
+        const offset = addr - 0xC000;
+        return this.ramBanks[bank] ? this.ramBanks[bank][offset] : 0;
+    }
+
+    write8(addr, value) {
+        addr &= 0xFFFF;
+        value &= 0xFF;
+        if (addr < 0x8000) {
+            return;
+        }
+        if (addr < 0xC000) {
+            const bank = this.ramPage0;
+            const offset = addr - 0x8000;
+            if (this.ramBanks[bank]) {
+                this.ramBanks[bank][offset] = value;
+            }
+            return;
+        }
+        const bank = this.ramPage1;
+        const offset = addr - 0xC000;
+        if (this.ramBanks[bank]) {
+            this.ramBanks[bank][offset] = value;
+        }
+    }
+}
+
+let memory = null;
+let cpu = null;
+
+function createIo() {
+    return {
+        read(port) {
+            port &= 0xFF;
+            switch (port) {
+                case 0xDB:
+                    return 0;
+                default:
+                    return 0;
+            }
+        },
+        write(port, value) {
+            port &= 0xFF;
+            value &= 0xFF;
+            switch (port) {
+                case 0x05:
+                    memory.ramPage0 = value & 0x0F;
+                    break;
+                case 0x06:
+                    memory.romPage = value % memory.romBanks.length;
+                    break;
+                case 0x07:
+                    memory.ramPage1 = value & 0x0F;
+                    break;
+            }
+        }
+    };
+}
+
+function runCpu(instructions = 1000) {
+    if (!cpu || cpu.halted) return 0;
+    let executed = 0;
+    try {
+        for (let i = 0; i < instructions && !cpu.halted; i++) {
+            cpu.execute();
+            executed++;
+        }
+    } catch (e) {
+        console.error('CPU exception', e);
+        console.error('PC:', cpu.r1?.pc?.toString(16) || 'unknown');
+        console.error('Instruction count:', executed);
+        cpu.halted = true;
+        log(`CPU error: ${e.message || e}`);
+    }
+    return executed;
+}
+
+// ==================== INIT ====================
+const ROM_PATH = '/play/ti-84ce.rom';
+const PROGRAM_PATH = '/downloads/DUNDETT.8xp';
+const screen = document.getElementById('screen');
+const ctx = screen.getContext('2d');
+
+function updateScreen() {
+    const width = 320;
+    const height = 240;
+    const pixels = width * height;
+    const bytesNeeded = pixels * 2;
+    const availableBytes = memory ? memory.ramBanks.length * 0x4000 : 0;
+
+    if (!memory || availableBytes < bytesNeeded) {
+        ctx.fillStyle = '#0a1f0a';
+        ctx.fillRect(0, 0, screen.width, screen.height);
+        ctx.fillStyle = '#3aff3a';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Frame buffer not available', screen.width / 2, screen.height / 2 - 8);
+        ctx.fillText('Need full banked RAM view', screen.width / 2, screen.height / 2 + 8);
+        return;
+    }
+
+    const imageData = ctx.createImageData(width, height);
+    const ramData = new Uint8Array(bytesNeeded);
+    let writeIndex = 0;
+    for (let bank = 0; bank < memory.ramBanks.length && writeIndex < bytesNeeded; bank++) {
+        const chunk = memory.ramBanks[bank];
+        const remaining = bytesNeeded - writeIndex;
+        const copyLength = Math.min(chunk.length, remaining);
+        ramData.set(chunk.subarray(0, copyLength), writeIndex);
+        writeIndex += copyLength;
+    }
+
+    for (let i = 0, pix = 0; pix < pixels; pix++) {
+        const lo = ramData[i++];
+        const hi = ramData[i++];
+        const pixel = lo | (hi << 8);
+        const r = ((pixel >> 11) & 0x1F) << 3;
+        const g = ((pixel >> 5) & 0x3F) << 2;
+        const b = (pixel & 0x1F) << 3;
+        const idx = pix * 4;
+        imageData.data[idx] = r;
+        imageData.data[idx + 1] = g;
+        imageData.data[idx + 2] = b;
+        imageData.data[idx + 3] = 255;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+const statusEl = document.getElementById('status');
+let emu;
+
+function log(msg) { console.log(msg); statusEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`; }
+
+async function init() {
+    try {
+        log('Loading ROM...');
+        const romResp = await fetch(ROM_PATH);
+        const romData = await romResp.arrayBuffer();
+        log(`ROM: ${romData.byteLength} bytes`);
+        let progData = null;
+        try { const progResp = await fetch(PROGRAM_PATH); progData = await progResp.arrayBuffer(); log(`Program: ${progData.byteLength} bytes`); } catch(e) { log('No program file'); }
+
+        log('Starting Z80...');
+        memory = new Ti84Memory(romData);
+        console.log('ROM Banks:', memory.romBanks.length);
+        console.log('RAM Banks:', memory.ramBanks.length);
+        console.log('ROM size:', memory.romSize);
+        console.log('First ROM bytes:', Array.from(memory.fixedRom.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+        
+        // Test memory reads
+        console.log('Memory test:');
+        console.log('  read8(0):', memory.read8(0).toString(16));
+        console.log('  read8(1):', memory.read8(1).toString(16));
+        console.log('  read8(2):', memory.read8(2).toString(16));
+        
+        cpu = new Z80(memory, createIo(), false);
+        // Extend Z80 with eZ80 methods
+        cpu.slp = function() {
+            this.halted = true;
+            this.tStates += 4;
+        };
+        cpu.stmix = function() {
+            this.tStates += 16;
+        };
+        cpu.mlts = function() {
+            this.tStates += 32;
+        };
+        cpu.tstio = function() {
+            const port = this.read8(this.pc++);
+            const val = this.io.read(port);
+            this.tStates += 12;
+        };
+        console.log('Z80 created');
+        console.log('  PC:', cpu.r1.pc);
+        console.log('  A:', cpu.r1.a);
+        console.log('  halted:', cpu.halted);
+        emu = cpu;
+
+        let executed = runCpu(500);
+        updateScreen();
+        if (!cpu.halted) { executed += runCpu(2000); updateScreen(); }
+        if (!cpu.halted) { executed += runCpu(10000); updateScreen(); }
+        if (!cpu.halted) { executed += runCpu(50000); updateScreen(); }
+        // Continuous run with banking support
+        setInterval(() => {
+            if (cpu && !cpu.halted) {
+                runCpu(1000);
+                updateScreen();
+            }
+        }, 50);
+        log(`Done. ${executed} instructions.`);
+        setupKeypad();
+    } catch(e) { console.error(`ERROR: ${e.message}`); log(`Error: ${e.message}`); }
+}
+
+function setupKeypad() {
+    const kp = document.getElementById('keypad');
+    '2nd,mode,del,alpha,prgm,vars,clear,enter'.split(',').forEach(k => {
+        const b = document.createElement('button'); b.className='btn'; b.textContent=k;
+        b.onclick = () => { if(cpu){ runCpu(100); updateScreen(); } };
+        kp.appendChild(b);
+    });
+}
+
+init();
+</script>
+</body>
+</html>

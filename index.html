@@ -215,5 +215,120 @@
             "Tall royal palms are spaced equidistantly."
         </div>
     </div>
+<script>
+console.log("%cYOU HEAR BREATHING.", "color:#3aff3a;font-family:monospace;font-size:16px;");
+console.log("%cType 'dundett()' for available commands.", "color:#6aff6a;font-family:monospace;");
+
+window.dundett = function() {
+    console.log(
+        `%c╔══════════════════════╗\n` +
+        `%c║  DUNDETT TERMINAL   ║\n` +
+        `%c╚══════════════════════╝`,
+        `color:#3aff3a;font-family:monospace;font-weight:bold;`,
+        `color:#3aff3a;font-family:monospace;font-weight:bold;`,
+        `color:#3aff3a;font-family:monospace;font-weight:bold;`
+    );
+    console.log("%cAVAILABLE COMMANDS:", "color:#6aff6a;font-family:monospace;font-weight:bold;");
+    console.log("%c  dundett()     %c— Display this message", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+    console.log("%c  lore()          %c— Learn about Thomas Stock", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+    console.log("%c  room101()       %c— Access denied.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+    console.log("%c  fun()           %c— The funny number is the key.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+};
+
+// Individual command shortcuts
+window.lore = function() {
+    console.log("%cTHOMAS STOCK — AGE 12", "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
+    console.log("%cDiscovered the door behind the Altar.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cTold everyone the Grue wasn't real.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cNo one believed him. He disappeared.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cThree years later, you woke up on Maple Street.", "color:#6aff6a;font-family:monospace;");
+};
+
+window.room101 = function() {
+    console.log("%cACCESS DENIED.", "color:#ff3a3a;font-family:monospace;font-weight:bold;font-size:14px;");
+    console.log("%cRoom 101 is off limits.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cDo not attempt to enter.", "color:#6aff6a;font-family:monospace;");
+    console.log("%c— Mr. Smith", "color:#4a6a4a;font-family:monospace;font-style:italic;");
+};
+
+window.alumena = function() {
+    console.log("%c🦆 QUACK.", "color:#3aff3a;font-family:monospace;font-size:14px;");
+    console.log("%cThe duck remembers.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cShe never stopped waiting.", "color:#6aff6a;font-family:monospace;");
+};
+
+window.fun = function() {
+    const funValue = Math.floor(Math.random() * 100) + 1;
+    console.log("%cTHE FUNNY NUMBER IS: " + funValue, "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
+    console.log("%cIt is the key.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cIt changes every time.", "color:#6aff6a;font-family:monospace;");
+    console.log("%cSmith doesn't know.", "color:#6aff6a;font-family:monospace;");
+};
+
+(function() {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 4) {
+        document.body.style.background = '#050505';
+        document.body.style.filter = 'brightness(0.8)';
+        const midnightMsg = document.createElement('div');
+        midnightMsg.style.cssText = 'position:fixed;bottom:20px;right:20px;color:#3aff3a;font-family:monospace;font-size:12px;opacity:0.7;z-index:1001;';
+        midnightMsg.textContent = 'IT IS VERY LATE.';
+        document.body.appendChild(midnightMsg);
+    }
+})();
+let wrongCursorTimer;
+let userHasMovedMouse = false;
+let userHasUsedKeyboard = false;
+
+document.addEventListener('mousemove', () => {
+    userHasMovedMouse = true;
+    document.body.style.cursor = 'default';
+    clearTimeout(wrongCursorTimer);
+    
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+    
+    wrongCursorTimer = setTimeout(() => {
+        document.body.style.cursor = 'text';
+    }, 25000);
+});
+
+document.addEventListener('keydown', () => {
+    userHasUsedKeyboard = true;
+    document.body.style.cursor = 'default';
+    clearTimeout(wrongCursorTimer);
+});
+(function() {
+    setInterval(() => {
+        const pixel = document.createElement('div');
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        pixel.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:2px;height:2px;background:rgba(58,255,58,0.15);z-index:998;pointer-events:none;`;
+        document.body.appendChild(pixel);
+    }, 25000);
+})();
+const originalTitle = document.title;
+const creepyTitles = [
+    'COME BACK.',
+    'THE GRUE IS CLOSE.',
+    'YOU HEAR BREATHING.',
+    'MAPLE STREET IS WAITING.',
+    'DON\'T LEAVE.',
+    'THOMAS STOCK DISAPPEARED.',
+    'YOU SEE SOMETHING MOVE.',
+    'MR. SMITH IS WATCHING.',
+    'ROOM 101 IS OFF LIMITS.',
+    'SOMETHING MOVES.'
+];
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        document.title = creepyTitles[Math.floor(Math.random() * creepyTitles.length)];
+    } else {
+        document.title = originalTitle;
+    }
+});
+</script>
 </body>
 </html>
