@@ -88,6 +88,10 @@ class Ti84Memory {
         for (let i = 0; i < RAM_BANK_COUNT; i++) {
             this.ramBanks.push(new Uint8Array(BANK_SIZE));
         }
+        this.extendedRam = new Uint8Array(0x1000000); // 16MB for extended memory
+        this.lcdWriteCount = 0;
+        this.extendedReadCount = 0;
+        this.extendedWriteCount = 0;
         this.reset();
     }
 
@@ -95,10 +99,13 @@ class Ti84Memory {
         this.romPage = 1;
         this.ramPage0 = 0;
         this.ramPage1 = 1;
+        this.lcdWriteCount = 0;
+        this.extendedReadCount = 0;
+        this.extendedWriteCount = 0;
     }
 
     read8(addr) {
-        addr &= 0xFFFF;
+        // Support 24-bit addresses for eZ80 ADL mode
         if (addr < 0x4000) {
             return this.fixedRom[addr];
         }
@@ -112,16 +119,20 @@ class Ti84Memory {
             const offset = addr - 0x8000;
             return this.ramBanks[bank] ? this.ramBanks[bank][offset] : 0;
         }
-        const bank = this.ramPage1;
-        const offset = addr - 0xC000;
-        return this.ramBanks[bank] ? this.ramBanks[bank][offset] : 0;
+        if (addr < 0x10000) {
+            const bank = this.ramPage1;
+            const offset = addr - 0xC000;
+            return this.ramBanks[bank] ? this.ramBanks[bank][offset] : 0;
+        }
+        // Extended memory (24-bit addresses)
+        this.extendedReadCount++;
+        return this.extendedRam[addr] || 0;
     }
 
     write8(addr, value) {
-        addr &= 0xFFFF;
         value &= 0xFF;
         if (addr < 0x8000) {
-            return;
+            return; // ROM is read-only
         }
         if (addr < 0xC000) {
             const bank = this.ramPage0;
@@ -131,11 +142,27 @@ class Ti84Memory {
             }
             return;
         }
-        const bank = this.ramPage1;
-        const offset = addr - 0xC000;
-        if (this.ramBanks[bank]) {
-            this.ramBanks[bank][offset] = value;
+        if (addr < 0x10000) {
+            const bank = this.ramPage1;
+            const offset = addr - 0xC000;
+            if (this.ramBanks[bank]) {
+                this.ramBanks[bank][offset] = value;
+            }
+            return;
         }
+        // Extended memory
+        this.extendedWriteCount++;
+        this.extendedRam[addr] = value;
+        if (addr >= 0xD40000 && addr < 0xD40000 + 320 * 240 * 2) {
+            this.lcdWriteCount++;
+            if (this.lcdWriteCount <= 10) {
+                console.log(`LCD write #${this.lcdWriteCount}: 0x${addr.toString(16)} = 0x${value.toString(16).padStart(2,'0')}`);
+            }
+        }
+    }
+
+    read16(addr) {
+        return this.read8(addr) | (this.read8(addr + 1) << 8);
     }
 }
 
@@ -200,38 +227,16 @@ function updateScreen() {
     const height = 240;
     const pixels = width * height;
     const bytesNeeded = pixels * 2;
-    const availableBytes = memory ? memory.ramBanks.length * 0x4000 : 0;
 
-    if (!memory || availableBytes < bytesNeeded) {
-        ctx.fillStyle = '#0a1f0a';
-        ctx.fillRect(0, 0, screen.width, screen.height);
-        ctx.fillStyle = '#3aff3a';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Frame buffer not available', screen.width / 2, screen.height / 2 - 8);
-        ctx.fillText('Need full banked RAM view', screen.width / 2, screen.height / 2 + 8);
-        return;
-    }
-
+    // Read from TI-84 CE LCD buffer at 0xD40000 (24-bit address)
+    const fb = 0xD40000;
     const imageData = ctx.createImageData(width, height);
-    const ramData = new Uint8Array(bytesNeeded);
-    let writeIndex = 0;
-    for (let bank = 0; bank < memory.ramBanks.length && writeIndex < bytesNeeded; bank++) {
-        const chunk = memory.ramBanks[bank];
-        const remaining = bytesNeeded - writeIndex;
-        const copyLength = Math.min(chunk.length, remaining);
-        ramData.set(chunk.subarray(0, copyLength), writeIndex);
-        writeIndex += copyLength;
-    }
 
-    for (let i = 0, pix = 0; pix < pixels; pix++) {
-        const lo = ramData[i++];
-        const hi = ramData[i++];
-        const pixel = lo | (hi << 8);
-        const r = ((pixel >> 11) & 0x1F) << 3;
-        const g = ((pixel >> 5) & 0x3F) << 2;
-        const b = (pixel & 0x1F) << 3;
+    for (let pix = 0; pix < pixels; pix++) {
+        const word = memory.read16(fb + pix * 2);
+        const r = ((word >> 11) & 0x1F) << 3;
+        const g = ((word >> 5) & 0x3F) << 2;
+        const b = (word & 0x1F) << 3;
         const idx = pix * 4;
         imageData.data[idx] = r;
         imageData.data[idx + 1] = g;
@@ -267,11 +272,35 @@ async function init() {
         console.log('  read8(0):', memory.read8(0).toString(16));
         console.log('  read8(1):', memory.read8(1).toString(16));
         console.log('  read8(2):', memory.read8(2).toString(16));
+        console.log('LCD write count at init:', memory.lcdWriteCount);
+        console.log('Extended read count at init:', memory.extendedReadCount);
+        console.log('Extended write count at init:', memory.extendedWriteCount);
         
         cpu = new Z80(memory, createIo(), false);
+        // Enable eZ80 ADL mode for 24-bit addressing
+        cpu.adlMode = true;
+        function fmtHex(value, digits) {
+            return value.toString(16).toUpperCase().padStart(digits, '0');
+        }
+        // Override read8/write8 to support 24-bit addresses
+        cpu.read8 = function(addr) {
+            this.tStates += 3;
+            const val = memory.read8(addr);
+            if (addr >= 0x10000 && this.tStates % 100 === 0) {
+                console.log(`Extended read: 0x${fmtHex(addr, 6)} -> 0x${fmtHex(val, 2)}`);
+            }
+            return val;
+        };
+        cpu.write8 = function(addr, value) {
+            this.tStates += 3;
+            if (addr >= 0x10000 && this.tStates % 100 === 0) {
+                console.log(`Extended write: 0x${fmtHex(addr, 6)} = 0x${fmtHex(value, 2)}`);
+            }
+            memory.write8(addr, value);
+        };
         // Extend Z80 with eZ80 methods
         cpu.slp = function() {
-            this.halted = true;
+            // SLP (Sleep) - in emulation, just add cycles without halting
             this.tStates += 4;
         };
         cpu.stmix = function() {
@@ -285,6 +314,18 @@ async function init() {
             const val = this.io.read(port);
             this.tStates += 12;
         };
+        cpu.opcodeTableED[0x93] = { funcName: 'ed93', dasm: 'ed93' };
+        cpu.ed93 = function() {
+            // Placeholder for ED 93 - eZ80 instruction (possibly LD DE, (nn) in ADL mode)
+            this.tStates += 8;
+        };
+        cpu.opcodeTableED[0x38] = { funcName: 'ed38', dasm: 'ed38' };
+        cpu.ed38 = function() {
+            // IN0 A, (n) - input from port n to A
+            const port = this.read8(this.pc++);
+            this.r1.a = this.io.read(port);
+            this.tStates += 12;
+        };
         console.log('Z80 created');
         console.log('  PC:', cpu.r1.pc);
         console.log('  A:', cpu.r1.a);
@@ -296,6 +337,9 @@ async function init() {
         if (!cpu.halted) { executed += runCpu(2000); updateScreen(); }
         if (!cpu.halted) { executed += runCpu(10000); updateScreen(); }
         if (!cpu.halted) { executed += runCpu(50000); updateScreen(); }
+        console.log('Extended read count after run:', memory.extendedReadCount);
+        console.log('Extended write count after run:', memory.extendedWriteCount);
+        console.log('LCD write count after run:', memory.lcdWriteCount);
         // Continuous run with banking support
         setInterval(() => {
             if (cpu && !cpu.halted) {
