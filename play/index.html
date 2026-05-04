@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DUNDETT Web Edition — Play Online</title>
+    <title>DUNDETT Web Version — Play Online</title>
     <meta name="description" content="Play DUNDETT directly in your browser. A TI-84 Plus CE text adventure, no calculator or download needed.">
     <meta name="robots" content="noindex, follow">
     <meta name="googlebot" content="noindex, follow">
@@ -26,7 +26,6 @@
             overflow-x: hidden;
         }
         
-        /* ── HEAVIER SCANLINES ── */
         .scanlines {
             position: fixed;
             top: 0;
@@ -65,7 +64,6 @@
             100% { opacity: 0; }
         }
         
-        /* ── CRT ROLLING LINE ── */
         .crt-line {
             position: fixed;
             top: 50%;
@@ -91,7 +89,7 @@
             width: 540px;
             box-shadow: 0 0 40px rgba(58,255,58,0.15), 0 15px 50px rgba(0,0,0,0.8);
             position: relative;
-            z-index: 1402384;
+            z-index: 1001;
         }
         
         .calc-brand {
@@ -153,20 +151,9 @@
             transition: all 0.1s;
             text-transform: lowercase;
         }
-        .btn:hover {
-            background: #2a3a2a;
-            border-color: #3aff3a;
-            box-shadow: 0 0 8px rgba(58,255,58,0.3);
-        }
-        .btn:active {
-            background: #0a1f0a;
-            transform: scale(0.95);
-        }
-        .btn.enter-key {
-            background: #1a2f1a;
-            border-color: #3a5a3a;
-            font-weight: bold;
-        }
+        .btn:hover { background: #2a3a2a; border-color: #3aff3a; box-shadow: 0 0 8px rgba(58,255,58,0.3); }
+        .btn:active { background: #0a1f0a; transform: scale(0.95); }
+        .btn.enter-key { background: #1a2f1a; border-color: #3a5a3a; font-weight: bold; }
         
         .warning {
             text-align: center;
@@ -193,9 +180,7 @@
     <div class="warning">This page is hidden from search engines. You found it anyway.</div>
 </div>
 
-<!-- Same script as before -->
 <script type="module">
-// [Keep the entire existing <script type="module"> block unchanged]
 const ROM_PATH = 'ti-84ce.rom';
 const WIDTH = 320, HEIGHT = 240;
 const STATUS = document.getElementById('status');
@@ -233,6 +218,7 @@ function startRenderLoop() {
     });
 }
 
+// ==================== KEYPAD with CSC SUPPORT ====================
 const KEY_MATRIX = {
     'graph':{g:0,b:0},'trace':{g:0,b:1},'zoom':{g:0,b:2},'window':{g:0,b:3},'y=':{g:0,b:4},
     '2nd':{g:0,b:5},'mode':{g:0,b:6},'del':{g:0,b:7},
@@ -244,16 +230,101 @@ const KEY_MATRIX = {
     'down':{g:6,b:0},'left':{g:6,b:1},'right':{g:6,b:2},'up':{g:6,b:3},'on':{g:6,b:4}
 };
 
-const keyState = Array(8).fill(0xFF);
-const held = new Set();
+// CSC codes for direct key injection
+const CSC_MAP = {
+    'enter': 0x09, 'clear': 0x0F, 'up': 0x01, 'down': 0x02, 
+    'left': 0x03, 'right': 0x04, '2nd': 0x10, 'alpha': 0x11,
+    'prgm': 0x1F, 'mode': 0x0D, 'del': 0x0E, 'on': 0x1C,
+    '0': 0x30, '1': 0x31, '2': 0x32, '3': 0x33, '4': 0x34,
+    '5': 0x35, '6': 0x36, '7': 0x37, '8': 0x38, '9': 0x39,
+    '+': 0x2B, '-': 0x2D, '×': 0x2A, '÷': 0x2F, '(': 0x28, ')': 0x29, '.': 0x2E
+};
 
-function sendKey(key, down) {
-    const m = KEY_MATRIX[key];
+const keyState = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+const heldKeys = new Set();
+const keyHoldFrames = new Map();
+let frameCounter = 0;
+
+function updateKeypad() {
+    if (!wasmModule?._emu_keypad_event) return;
+    for (let g = 0; g < 8; g++) {
+        wasmModule._emu_keypad_event(g, keyState[g]);
+    }
+}
+
+function sendCSC(keyName, isPress) {
+    const code = CSC_MAP[keyName];
+    if (!code) return false;
+    
+    if (wasmModule._sendCSC) {
+        wasmModule._sendCSC(code);
+        console.log(`📟 CSC ${isPress ? 'PRESS' : 'RELEASE'}: ${keyName} → 0x${code.toString(16)}`);
+        return true;
+    }
+    return false;
+}
+
+function pressKey(keyName) {
+    const m = KEY_MATRIX[keyName];
     if (!m) return;
-    if (down) { if (held.has(key)) return; held.add(key); keyState[m.g] &= ~(1<<m.b); }
-    else { held.delete(key); keyState[m.g] |= (1<<m.b); }
-    if (wasmModule?._emu_keypad_event) wasmModule._emu_keypad_event(m.g, keyState[m.g]);
-    document.getElementById('debug').textContent = `${key} ${down?'▼':'▲'}`;
+    if (heldKeys.has(keyName)) return;
+    
+    heldKeys.add(keyName);
+    
+    // Matrix method
+    keyState[m.g] &= ~(1 << m.b);
+    updateKeypad();
+    
+    // CSC method (direct)
+    sendCSC(keyName, true);
+    
+    // Hold for ~30 frames (500ms at 60fps)
+    keyHoldFrames.set(keyName, 30);
+    
+    document.getElementById('debug').textContent = `▼ ${keyName}`;
+    console.log(`PRESS ${keyName}: g${m.g} b${m.b} → state[${m.g}]=0x${keyState[m.g].toString(16).padStart(2,'0')}`);
+}
+
+function releaseKey(keyName) {
+    const m = KEY_MATRIX[keyName];
+    if (!m) return;
+    if (!heldKeys.has(keyName)) return;
+    
+    heldKeys.delete(keyName);
+    keyHoldFrames.delete(keyName);
+    
+    // Matrix method
+    keyState[m.g] |= (1 << m.b);
+    updateKeypad();
+    
+    // CSC method (direct)
+    sendCSC(keyName, false);
+    
+    document.getElementById('debug').textContent = `▲ ${keyName}`;
+    console.log(`RELEASE ${keyName}: g${m.g} b${m.b} → state[${m.g}]=0x${keyState[m.g].toString(16).padStart(2,'0')}`);
+}
+
+// Update keypad state every frame, handle auto-release
+function continuousKeypadUpdate() {
+    frameCounter++;
+    
+    // Auto-release keys after their hold frames expire
+    for (let [keyName, framesLeft] of keyHoldFrames) {
+        if (framesLeft <= 1) {
+            releaseKey(keyName);
+        } else {
+            keyHoldFrames.set(keyName, framesLeft - 1);
+        }
+    }
+    
+    // Send matrix state every frame (but not too often? emu handles it)
+    if (wasmModule?._emu_keypad_event) {
+        for (let g = 0; g < 8; g++) {
+            wasmModule._emu_keypad_event(g, keyState[g]);
+        }
+    }
+    
+    requestAnimationFrame(continuousKeypadUpdate);
 }
 
 function buildKeypad() {
@@ -265,39 +336,46 @@ function buildKeypad() {
         ['x^2','(',')','÷','×','-','+'],
         ['sto>','ln','log','ee'],
         ['7','8','9','4','5','6','1','2','3','0','.','(-)'],
-        ['enter'], ['up','down','left','right']
+        ['enter'],
+        ['up','down','left','right']
     ];
     const kp = document.getElementById('keypad');
     layout.flat().forEach(key => {
         const b = document.createElement('button');
         b.className = 'btn' + (key === 'enter' ? ' enter-key' : '');
         b.textContent = key;
-        b.onmousedown = e => { e.preventDefault(); sendKey(key, true); };
-        b.onmouseup = e => { e.preventDefault(); sendKey(key, false); };
-        b.onmouseleave = () => { if (held.has(key)) sendKey(key, false); };
-        b.ontouchstart = e => { e.preventDefault(); sendKey(key, true); };
-        b.ontouchend = e => { e.preventDefault(); sendKey(key, false); };
+        b.addEventListener('mousedown', e => { e.preventDefault(); pressKey(key); });
+        b.addEventListener('mouseup', e => { e.preventDefault(); });
+        b.addEventListener('mouseleave', () => releaseKey(key));
+        b.addEventListener('touchstart', e => { e.preventDefault(); pressKey(key); });
+        b.addEventListener('touchend', e => { e.preventDefault(); });
         kp.appendChild(b);
     });
 }
 
+const keyMap = {
+    'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right',
+    'Enter':'enter','Backspace':'del','Delete':'clear',
+    '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+    '+':'+','-':'-','*':'×','/':'÷','(':'(',')':')','.':'.','^':'^'
+};
 document.addEventListener('keydown', e => {
-    const map = {'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right','Enter':'enter','Backspace':'del','Delete':'clear','0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','+':'+','-':'-','*':'×','/':'÷','(':'(',')':')','.':'.','^':'^'};
-    const k = map[e.key];
-    if (k) { e.preventDefault(); sendKey(k, true); }
+    const k = keyMap[e.key];
+    if (k) { e.preventDefault(); pressKey(k); }
 });
 document.addEventListener('keyup', e => {
-    const map = {'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right','Enter':'enter','Backspace':'del','Delete':'clear','0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','+':'+','-':'-','*':'×','/':'÷','(':'(',')':')','.':'.','^':'^'};
-    const k = map[e.key];
-    if (k) { e.preventDefault(); sendKey(k, false); }
+    const k = keyMap[e.key];
+    if (k) { e.preventDefault(); releaseKey(k); }
 });
 
+// ==================== EASTER EGGS ====================
 console.log("%cDUNDETT WEB EDITION", "color:#3aff3a;font-family:monospace;font-size:16px;font-weight:bold;");
 console.log("%cThe emulator is held together with duct tape and prayers.", "color:#6aff6a;font-family:monospace;");
 console.log("%cType 'grue()' if you are brave.", "color:#4a6a4a;font-family:monospace;");
 window.grue = () => { console.log("%cTHE GRUE SEES YOU.", "color:#ff3a3a;font-family:monospace;font-weight:bold;font-size:14px;"); console.log("%cEven in the browser. Even in the dark.", "color:#6aff6a;font-family:monospace;"); };
 window.dundett = () => { console.log("%cDUNDETT v1.3.4 — Web Edition (beta)", "color:#3aff3a;font-family:monospace;font-weight:bold;"); console.log("%cKeypad: semi-functional. Emulator: barely alive. Vibes: immaculate.", "color:#6aff6a;font-family:monospace;"); };
 
+// ==================== INIT ====================
 async function init() {
     try {
         log('Loading...');
@@ -316,11 +394,56 @@ async function init() {
         
         startRenderLoop();
         buildKeypad();
+        
+        // start continuous keypad spamming
+        continuousKeypadUpdate();
+        
+        // Set main loop timing (60fps)
+        if (wasmModule._emsc_set_main_loop_timing) {
+            wasmModule._emsc_set_main_loop_timing(0, 16);
+            log('Main loop timing set');
+        }
+        
         wasmModule.callMain([]);
         log('Started');
+        
+        if (wasmModule._emsc_resume_main_loop) {
+            wasmModule._emsc_resume_main_loop();
+            log('Main loop resumed');
+        }
+        
+        // send ON key to boot
+        setTimeout(() => {
+            console.log('🔘 Booting calculator...');
+            pressKey('on');
+            setTimeout(() => {
+                releaseKey('on');
+                console.log('✅ ON released');
+            }, 300);
+        }, 1500);
+        
+        // test a key after boot to see if it works
+        setTimeout(() => {
+            console.log('🧪 Testing key input...');
+            pressKey('enter');
+            setTimeout(() => {
+                releaseKey('enter');
+            }, 200);
+        }, 4000);
+        
+        setTimeout(() => {
+            console.log('=== POST-BOOT ===');
+            console.log('emul_is_inited:', window.emul_is_inited);
+            console.log('emul_is_paused:', window.emul_is_paused);
+            console.log('_sendCSC exists:', !!wasmModule._sendCSC);
+            console.log('_emu_keypad_event exists:', !!wasmModule._emu_keypad_event);
+        }, 3000);
+        
     } catch(e) { console.error(e); log(`Error: ${e.message}`); }
 }
 
+window.pressKey = pressKey;
+window.releaseKey = releaseKey;
 init();
 </script>
 </body>
