@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="language" content="en">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="DUNDETT, TI-84, calculator game, text adventure, dunnet, grue, bear, TI-BASIC, calculator, adventure game, retro gaming, indie game, ti84, calculator games, text based adventure">
+    <meta name="keywords"
+        content="DUNDETT, TI-84, calculator game, text adventure, dunnet, grue, bear, TI-BASIC, calculator, adventure game, retro gaming, indie game, ti84, calculator games, text based adventure">
     <meta property="og:title" content="DUNDETT | TI-84 Plus CE GAME">
-    <meta name="description" content="DUNDETT is a text adventure for the TI-84 Plus CE. Explore caves, befriend a bear, avoid the Grue, log into Windows XP, and uncover the mystery of Thomas Stock. Inspired by Dunnet. Features 30+ locations, 5 memory fragments, and more.">
+    <meta name="description"
+        content="DUNDETT is a text adventure for the TI-84 Plus CE. Explore caves, befriend a bear, avoid the Grue, log into Windows XP, and uncover the mystery of Thomas Stock. Inspired by Dunnet. Features 30+ locations, 5 memory fragments, and more.">
     <meta name="revisit-after" content="7 days">
     <meta name="msvalidate.01" content="DD5468F2A0D8B66BEEEDC68C62783CC9" />
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
     <meta name="bingbot" content="index, follow">
-    <meta property="og:description" content="A text adventure for the TI-84 Plus CE. Explore caves, befriend (or anger) a bear, avoid the grue, and discover the secrets hidden within.">
+    <meta property="og:description"
+        content="A text adventure for the TI-84 Plus CE. Explore caves, befriend (or anger) a bear, avoid the grue, and discover the secrets hidden within.">
     <meta property="og:image" content="/media/GRUE.jpeg">
     <meta property="og:image:width" content="2360">
     <meta property="og:image:height" content="1234">
@@ -62,104 +66,297 @@
     <title>DUNDETT | TI-84 Plus CE GAME</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: #0a0a0a;
             font-family: 'Courier New', monospace;
             color: #3aff3a;
             min-height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
         }
-        
+
         .scanlines {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 999;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
             background: repeating-linear-gradient(0deg,
-                rgba(0,255,0,0.025) 0px, rgba(0,255,0,0.025) 2px,
-                transparent 2px, transparent 4px);
+                    rgba(0, 255, 0, 0.025) 0px, rgba(0, 255, 0, 0.025) 2px,
+                    transparent 2px, transparent 4px);
             animation: scanMove 0.25s linear infinite;
         }
+
         @keyframes scanMove {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(4px); }
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(4px);
+            }
         }
+
         .scanlines::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.12); opacity: 0;
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.12);
+            opacity: 0;
             animation: flicker 0.18s infinite;
         }
+
         @keyframes flicker {
-            0% { opacity: 0; } 50% { opacity: 0.04; } 100% { opacity: 0; }
+            0% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 0.04;
+            }
+
+            100% {
+                opacity: 0;
+            }
         }
+
         /* ── CRT ROLLING LINE ── */
         .crt-line {
-            position: fixed; top: 50%; left: 0; width: 100%; height: 2px;
-            background: rgba(58,255,58,0.25); z-index: 1000; pointer-events: none;
+            position: fixed;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(58, 255, 58, 0.25);
+            z-index: 1000;
+            pointer-events: none;
             animation: crtRoll 8s linear infinite;
-            box-shadow: 0 0 18px rgba(58,255,58,0.15);
+            box-shadow: 0 0 18px rgba(58, 255, 58, 0.15);
         }
+
         @keyframes crtRoll {
-            0% { top: -5%; } 100% { top: 105%; }
+            0% {
+                top: -5%;
+            }
+
+            100% {
+                top: 105%;
+            }
         }
+
         /* ── TEXT GLITCH ── */
         .glitch {
             animation: textGlitch 4.5s infinite;
         }
+
         @keyframes textGlitch {
-            0%, 90%, 100% { transform: translate(0); }
-            92% { transform: translate(-2px, 1px); }
-            94% { transform: translate(2px, -1px); }
-            96% { transform: translate(0); }
+
+            0%,
+            90%,
+            100% {
+                transform: translate(0);
+            }
+
+            92% {
+                transform: translate(-2px, 1px);
+            }
+
+            94% {
+                transform: translate(2px, -1px);
+            }
+
+            96% {
+                transform: translate(0);
+            }
         }
+
         .container {
-            max-width: 700px; width: 90%; padding: 2rem; text-align: center;
-            position: relative; z-index: 1;
+            max-width: 700px;
+            width: 90%;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
         }
+
         h1 {
-            font-size: 2rem; letter-spacing: 4px; margin-bottom: 0.5rem;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
             text-shadow: 0 0 5px #3aff3a;
         }
+
         .video-container {
-            position: relative; padding-bottom: 56.25%; height: 0; margin-bottom: 2rem;
-            border: 1px solid #2a4a2a; border-radius: 8px; overflow: hidden; background: #000;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            margin-bottom: 2rem;
+            border: 1px solid #2a4a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
         }
+
         .video-container video {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: contain; background: #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
         }
+
         .info-section {
-            text-align: left; margin-bottom: 2rem; padding: 1rem;
-            border: 1px solid #2a4a2a; border-radius: 8px; background: #0a1f0a;
+            text-align: left;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #2a4a2a;
+            border-radius: 8px;
+            background: #0a1f0a;
         }
-        .info-section h3 { font-size: 1rem; margin-bottom: 0.8rem; color: #6aff6a; letter-spacing: 1px; }
-        .info-section p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.8rem; color: #3aff3a; }
-        .feature-list { list-style: none; margin-top: 0.5rem; }
-        .feature-list li { font-size: 0.8rem; margin-bottom: 0.4rem; padding-left: 1.2rem; position: relative; }
-        .feature-list li i { position: absolute; left: 0; top: 0.2rem; font-size: 0.7rem; color: #3aff3a; }
+
+        .info-section h3 {
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            color: #6aff6a;
+            letter-spacing: 1px;
+        }
+
+        .info-section p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 0.8rem;
+            color: #3aff3a;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 0.5rem;
+        }
+
+        .feature-list li {
+            font-size: 0.8rem;
+            margin-bottom: 0.4rem;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .feature-list li i {
+            position: absolute;
+            left: 0;
+            top: 0.2rem;
+            font-size: 0.7rem;
+            color: #3aff3a;
+        }
+
         .btn {
-            display: inline-block; background: #1a2a1a; border: 1px solid #3aff3a;
-            color: #3aff3a; padding: 0.8rem 2rem; font-family: 'Courier New', monospace;
-            font-size: 1rem; text-decoration: none; border-radius: 4px; cursor: pointer;
-            transition: all 0.2s; margin: 0.5rem;
+            display: inline-block;
+            background: #1a2a1a;
+            border: 1px solid #3aff3a;
+            color: #3aff3a;
+            padding: 0.8rem 2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0.5rem;
         }
-        .btn i { margin-right: 8px; }
-        .btn:hover { background: #2a3a2a; box-shadow: 0 0 10px #3aff3a; }
-        .newsletter { margin: 2rem 0; border-radius: 16px; overflow: hidden; background: #0a1f0a; border: 1px solid #2a4a2a; }
-        .newsletter iframe { display: block; width: 100%; height: 320px; border: none; }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn:hover {
+            background: #2a3a2a;
+            box-shadow: 0 0 10px #3aff3a;
+        }
+
+        .newsletter {
+            margin: 2rem 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0a1f0a;
+            border: 1px solid #2a4a2a;
+        }
+
+        .newsletter iframe {
+            display: block;
+            width: 100%;
+            height: 320px;
+            border: none;
+        }
+
         .teaser {
-            text-align: left; padding: 1rem; margin-bottom: 1rem;
-            border: 1px solid #2a4a2a; border-radius: 8px; background: #0a1f0a;
+            text-align: left;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #2a4a2a;
+            border-radius: 8px;
+            background: #0a1f0a;
         }
-        .teaser h3 { color: #6aff6a; margin-bottom: 0.8rem; }
-        .teaser p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.8rem; }
-        .teaser ul { list-style: none; margin: 0.5rem 0; }
-        .teaser li { font-size: 0.8rem; margin-bottom: 0.3rem; padding-left: 1.2rem; position: relative; }
-        .teaser li i { position: absolute; left: 0; top: 0.2rem; font-size: 0.7rem; color: #3aff3a; }
-        .quote { margin-top: 2rem; font-size: 0.9rem; color: #6aff6a; font-style: italic; }
-        hr { border-color: #2a4a2a; margin: 1.5rem 0; }
+
+        .teaser h3 {
+            color: #6aff6a;
+            margin-bottom: 0.8rem;
+        }
+
+        .teaser p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 0.8rem;
+        }
+
+        .teaser ul {
+            list-style: none;
+            margin: 0.5rem 0;
+        }
+
+        .teaser li {
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .teaser li i {
+            position: absolute;
+            left: 0;
+            top: 0.2rem;
+            font-size: 0.7rem;
+            color: #3aff3a;
+        }
+
+        .quote {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #6aff6a;
+            font-style: italic;
+        }
+
+        hr {
+            border-color: #2a4a2a;
+            margin: 1.5rem 0;
+        }
     </style>
 </head>
+
 <body>
     <div class="scanlines"></div>
     <div class="crt-line"></div>
@@ -168,8 +365,8 @@
         <h1 class="glitch">DUNDETT</h1>
 
         <div class="video-container">
-            <video poster="/media/trailer.png" controls preload="auto"
-                controlsList="nodownload noremoteplayback" disablePictureInPicture>
+            <video poster="/media/trailer.png" controls preload="auto" controlsList="nodownload noremoteplayback"
+                disablePictureInPicture>
                 <source src="/media/dundett_trailer.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -177,7 +374,8 @@
 
         <div class="info-section">
             <h3 class="glitch"><i class="fas fa-terminal"></i> ABOUT THE GAME</h3>
-            <p>DUNDETT is a text adventure for the TI-84 Plus CE. Explore caves, befriend (or anger) a bear, avoid the grue, and discover the secrets hidden within.</p>
+            <p>DUNDETT is a text adventure for the TI-84 Plus CE. Explore caves, befriend (or anger) a bear, avoid the
+                grue, and discover the secrets hidden within.</p>
             <ul class="feature-list">
                 <li><i class="fas fa-caret-right"></i> Feed the bear, or face the consequences</li>
                 <li><i class="fas fa-caret-right"></i> Navigate pitch-black rooms without getting eaten</li>
@@ -194,7 +392,8 @@
 
         <div class="teaser">
             <h3 class="glitch"><i class="fas fa-computer"></i> WELCOME TO WINDOWS XP</h3>
-            <p>The school door was ajar. Inside, a single monitor glows in the dark computer lab. Thomas Stock's desktop awaits.</p>
+            <p>The school door was ajar. Inside, a single monitor glows in the dark computer lab. Thomas Stock's desktop
+                awaits.</p>
             <p><strong>What's new in v1.3.4?</strong></p>
             <ul>
                 <li><i class="fas fa-arrow-right"></i> A slightly disfunctional Windows XP computer</li>
@@ -207,139 +406,142 @@
         </div>
         <div class="info-section">
             <p style="font-size:0.85rem;color:#6aff6a;margin-bottom:0.5rem;text-align:center;">
-                <i class="fas fa-envelope"></i> <strong>STAY UPDATED</strong> — Get new version alerts, lore drops, and Grue warnings straight to your inbox.
+                <i class="fas fa-envelope"></i> <strong>STAY UPDATED</strong> — Get new version alerts, lore drops, and
+                Grue warnings straight to your inbox.
             </p>
-    
-        <div class="newsletter">
-            <iframe src="https://superskibidi69.substack.com/embed" width="100%" height="320"
-                frameborder="0" scrolling="no" style="display: block;"></iframe>
+
+            <div class="newsletter">
+                <iframe src="https://superskibidi69.substack.com/embed" width="100%" height="320" frameborder="0"
+                    scrolling="no" style="display: block;"></iframe>
+            </div>
         </div>
-</div>
         <div class="quote">
             "Tall royal palms are spaced equidistantly."
         </div>
         <div style="margin-top:2rem;font-size:0.7rem;color:#4a6a4a;text-align:center;">
-    <p>DUNDETT · Made by <strong>superfood</strong> · Inspired by Dunnet</p>
-    <p><a href="https://www.cemetech.net/users/superfood" style="color:#4a6a4a;">Cemetech</a></p>
-</div>
+            <p>DUNDETT · Made by <strong>superfood</strong> · Inspired by Dunnet</p>
+            <p><a href="https://www.cemetech.net/users/superfood" target="_blank" rel="noopener noreferrer"
+                    style="color:#4a6a4a;">Cemetech</a></p>
+        </div>
     </div>
 
-<script>
-console.log("%cYOU HEAR BREATHING.", "color:#3aff3a;font-family:monospace;font-size:16px;");
-console.log("%cType 'dundett()' for available commands.", "color:#6aff6a;font-family:monospace;");
+    <script>
+        console.log("%cYOU HEAR BREATHING.", "color:#3aff3a;font-family:monospace;font-size:16px;");
+        console.log("%cType 'dundett()' for available commands.", "color:#6aff6a;font-family:monospace;");
 
-window.dundett = function() {
-    console.log(
-        `%c╔══════════════════════╗\n` +
-        `%c║  DUNDETT TERMINAL    ║\n` +
-        `%c╚══════════════════════╝`,
-        `color:#3aff3a;font-family:monospace;font-weight:bold;`,
-        `color:#3aff3a;font-family:monospace;font-weight:bold;`,
-        `color:#3aff3a;font-family:monospace;font-weight:bold;`
-    );
-    console.log("%cAVAILABLE COMMANDS:", "color:#6aff6a;font-family:monospace;font-weight:bold;");
-    console.log("%c  dundett()     %c— Display this message", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
-    console.log("%c  lore()          %c— Learn about Thomas Stock", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
-    console.log("%c  room101()       %c— Access denied.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
-    console.log("%c  fun()           %c— The funny number is the key.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
-};
+        window.dundett = function () {
+            console.log(
+                `%c╔══════════════════════╗\n` +
+                `%c║  DUNDETT TERMINAL    ║\n` +
+                `%c╚══════════════════════╝`,
+                `color:#3aff3a;font-family:monospace;font-weight:bold;`,
+                `color:#3aff3a;font-family:monospace;font-weight:bold;`,
+                `color:#3aff3a;font-family:monospace;font-weight:bold;`
+            );
+            console.log("%cAVAILABLE COMMANDS:", "color:#6aff6a;font-family:monospace;font-weight:bold;");
+            console.log("%c  dundett()     %c— Display this message", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+            console.log("%c  lore()          %c— Learn about Thomas Stock", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+            console.log("%c  room101()       %c— Access denied.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+            console.log("%c  fun()           %c— The funny number is the key.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
+        };
 
-// Individual command shortcuts
-window.lore = function() {
-    console.log("%cTHOMAS STOCK — AGE 12", "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
-    console.log("%cDiscovered the door behind the Altar.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cTold everyone the Grue wasn't real.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cNo one believed him. He disappeared.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cThree years later, you woke up on Maple Street.", "color:#6aff6a;font-family:monospace;");
-};
+        // Individual command shortcuts
+        window.lore = function () {
+            console.log("%cTHOMAS STOCK — AGE 12", "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
+            console.log("%cDiscovered the door behind the Altar.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cTold everyone the Grue wasn't real.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cNo one believed him. He disappeared.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cThree years later, you woke up on Maple Street.", "color:#6aff6a;font-family:monospace;");
+        };
 
-window.room101 = function() {
-    console.log("%cACCESS DENIED.", "color:#ff3a3a;font-family:monospace;font-weight:bold;font-size:14px;");
-    console.log("%cRoom 101 is off limits.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cDo not attempt to enter.", "color:#6aff6a;font-family:monospace;");
-    console.log("%c— Mr. Smith", "color:#4a6a4a;font-family:monospace;font-style:italic;");
-};
+        window.room101 = function () {
+            console.log("%cACCESS DENIED.", "color:#ff3a3a;font-family:monospace;font-weight:bold;font-size:14px;");
+            console.log("%cRoom 101 is off limits.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cDo not attempt to enter.", "color:#6aff6a;font-family:monospace;");
+            console.log("%c— Mr. Smith", "color:#4a6a4a;font-family:monospace;font-style:italic;");
+        };
 
-window.alumena = function() {
-    console.log("%c🦆 QUACK.", "color:#3aff3a;font-family:monospace;font-size:14px;");
-    console.log("%cThe duck remembers.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cShe never stopped waiting.", "color:#6aff6a;font-family:monospace;");
-};
+        window.alumena = function () {
+            console.log("%c🦆 QUACK.", "color:#3aff3a;font-family:monospace;font-size:14px;");
+            console.log("%cThe duck remembers.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cShe never stopped waiting.", "color:#6aff6a;font-family:monospace;");
+        };
 
-window.fun = function() {
-    const funValue = Math.floor(Math.random() * 100) + 1;
-    console.log("%cTHE FUNNY NUMBER IS: " + funValue, "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
-    console.log("%cIt is the key.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cIt changes every time.", "color:#6aff6a;font-family:monospace;");
-    console.log("%cSmith doesn't know.", "color:#6aff6a;font-family:monospace;");
-};
+        window.fun = function () {
+            const funValue = Math.floor(Math.random() * 100) + 1;
+            console.log("%cTHE FUNNY NUMBER IS: " + funValue, "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
+            console.log("%cIt is the key.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cIt changes every time.", "color:#6aff6a;font-family:monospace;");
+            console.log("%cSmith doesn't know.", "color:#6aff6a;font-family:monospace;");
+        };
 
-(function() {
-    const hour = new Date().getHours();
-    if (hour >= 0 && hour < 4) {
-        document.body.style.background = '#050505';
-        document.body.style.filter = 'brightness(0.8)';
-        const midnightMsg = document.createElement('div');
-        midnightMsg.style.cssText = 'position:fixed;bottom:20px;right:20px;color:#3aff3a;font-family:monospace;font-size:12px;opacity:0.7;z-index:1001;';
-        midnightMsg.textContent = 'IT IS VERY LATE.';
-        document.body.appendChild(midnightMsg);
-    }
-})();
-let wrongCursorTimer;
-let userHasMovedMouse = false;
-let userHasUsedKeyboard = false;
+        (function () {
+            const hour = new Date().getHours();
+            if (hour >= 0 && hour < 4) {
+                document.body.style.background = '#050505';
+                document.body.style.filter = 'brightness(0.8)';
+                const midnightMsg = document.createElement('div');
+                midnightMsg.style.cssText = 'position:fixed;bottom:20px;right:20px;color:#3aff3a;font-family:monospace;font-size:12px;opacity:0.7;z-index:1001;';
+                midnightMsg.textContent = 'IT IS VERY LATE.';
+                document.body.appendChild(midnightMsg);
+            }
+        })();
+        let wrongCursorTimer;
+        let userHasMovedMouse = false;
+        let userHasUsedKeyboard = false;
 
-document.addEventListener('mousemove', () => {
-    userHasMovedMouse = true;
-    document.body.style.cursor = 'default';
-    clearTimeout(wrongCursorTimer);
-    
-    // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-    
-    wrongCursorTimer = setTimeout(() => {
-        document.body.style.cursor = 'text';
-    }, 25000);
-});
+        document.addEventListener('mousemove', () => {
+            userHasMovedMouse = true;
+            document.body.style.cursor = 'default';
+            clearTimeout(wrongCursorTimer);
 
-document.addEventListener('keydown', () => {
-    userHasUsedKeyboard = true;
-    document.body.style.cursor = 'default';
-    clearTimeout(wrongCursorTimer);
-});
-(function() {
-    setInterval(() => {
-        const pixel = document.createElement('div');
-        const x = Math.random() * window.innerWidth;
-        const y = Math.random() * window.innerHeight;
-        pixel.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:2px;height:2px;background:rgba(58,255,58,0.15);z-index:998;pointer-events:none;`;
-        document.body.appendChild(pixel);
-    }, 25000);
-})();
-const originalTitle = document.title;
-const creepyTitles = [
-    'COME BACK.',
-    'THE GRUE IS CLOSE.',
-    'YOU HEAR BREATHING.',
-    'MAPLE STREET IS WAITING.',
-    'DON\'T LEAVE.',
-    'THOMAS STOCK DISAPPEARED.',
-    'YOU SEE SOMETHING MOVE.',
-    'MR. SMITH IS WATCHING.',
-    'ROOM 101 IS OFF LIMITS.',
-    'SOMETHING MOVES.',
-    'TALL ROYAL PALMS ARE SPACED EQUIDISTANTLY.',
-];
+            // Check for reduced motion preference
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion) return;
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        document.title = creepyTitles[Math.floor(Math.random() * creepyTitles.length)];
-    } else {
-        document.title = originalTitle;
-    }
-});
+            wrongCursorTimer = setTimeout(() => {
+                document.body.style.cursor = 'text';
+            }, 25000);
+        });
 
-</script>
+        document.addEventListener('keydown', () => {
+            userHasUsedKeyboard = true;
+            document.body.style.cursor = 'default';
+            clearTimeout(wrongCursorTimer);
+        });
+        (function () {
+            setInterval(() => {
+                const pixel = document.createElement('div');
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                pixel.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:2px;height:2px;background:rgba(58,255,58,0.15);z-index:998;pointer-events:none;`;
+                document.body.appendChild(pixel);
+            }, 25000);
+        })();
+        const originalTitle = document.title;
+        const creepyTitles = [
+            'COME BACK.',
+            'THE GRUE IS CLOSE.',
+            'YOU HEAR BREATHING.',
+            'MAPLE STREET IS WAITING.',
+            'DON\'T LEAVE.',
+            'THOMAS STOCK DISAPPEARED.',
+            'YOU SEE SOMETHING MOVE.',
+            'MR. SMITH IS WATCHING.',
+            'ROOM 101 IS OFF LIMITS.',
+            'SOMETHING MOVES.',
+            'TALL ROYAL PALMS ARE SPACED EQUIDISTANTLY.',
+        ];
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                document.title = creepyTitles[Math.floor(Math.random() * creepyTitles.length)];
+            } else {
+                document.title = originalTitle;
+            }
+        });
+
+    </script>
 </body>
+
 </html>
