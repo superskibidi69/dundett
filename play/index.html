@@ -218,113 +218,135 @@ function startRenderLoop() {
     });
 }
 
-// ==================== KEYPAD with CSC SUPPORT ====================
-const KEY_MATRIX = {
-    'graph':{g:0,b:0},'trace':{g:0,b:1},'zoom':{g:0,b:2},'window':{g:0,b:3},'y=':{g:0,b:4},
-    '2nd':{g:0,b:5},'mode':{g:0,b:6},'del':{g:0,b:7},
-    'sto>':{g:1,b:0},'ln':{g:1,b:1},'log':{g:1,b:2},'x^2':{g:1,b:3},'x,t,θ,n':{g:1,b:4},'math':{g:1,b:5},'apps':{g:1,b:6},
-    'alpha':{g:2,b:0},'0':{g:2,b:1},'1':{g:2,b:2},'4':{g:2,b:3},'7':{g:2,b:4},'sin':{g:2,b:5},'prgm':{g:2,b:6},'clear':{g:2,b:7},
-    'stat':{g:3,b:0},'2':{g:3,b:1},'5':{g:3,b:2},'8':{g:3,b:3},'cos':{g:3,b:4},'tan':{g:3,b:5},'^':{g:3,b:6},'(':{g:3,b:7},
-    'vars':{g:4,b:0},'3':{g:4,b:1},'6':{g:4,b:2},'9':{g:4,b:3},')':{g:4,b:4},'÷':{g:4,b:5},'ee':{g:4,b:6},
-    'matrix':{g:5,b:0},'(-)':{g:5,b:1},'.':{g:5,b:2},'×':{g:5,b:3},'+':{g:5,b:4},'-':{g:5,b:5},'enter':{g:5,b:6},
-    'down':{g:6,b:0},'left':{g:6,b:1},'right':{g:6,b:2},'up':{g:6,b:3},'on':{g:6,b:4}
+const CSC_CODES = {
+  // arrows / control
+  "up": 0x01,
+  "down": 0x02,
+  "left": 0x03,
+  "right": 0x04,
+  "enter": 0x05,
+
+  // editing
+  "clear": 0x09,
+  "del": 0x0A,
+
+  // modifiers
+  "2nd": 0x0C,
+  "alpha": 0x0D,
+
+  // top row
+  "mode": 0x0E,
+  "y=": 0x0F,
+  "window": 0x10,
+  "zoom": 0x11,
+  "trace": 0x12,
+  "graph": 0x13,
+
+  // 2nd row
+  "math": 0x14,
+  "apps": 0x15,
+  "prgm": 0x16,
+  "vars": 0x17,
+  "clear": 0x18,
+
+  // trig / functions
+  "sin": 0x19,
+  "cos": 0x1A,
+  "tan": 0x1B,
+  "^": 0x1C,
+
+  // misc
+  "x^2": 0x1D,
+  "log": 0x1E,
+  "ln": 0x1F,
+  "sto>": 0x20,
+
+  // numbers row 1
+  "7": 0x21,
+  "8": 0x22,
+  "9": 0x23,
+
+  // numbers row 2
+  "4": 0x24,
+  "5": 0x25,
+  "6": 0x26,
+
+  // numbers row 3
+  "1": 0x27,
+  "2": 0x28,
+  "3": 0x29,
+
+  // bottom row
+  "0": 0x2A,
+  ".": 0x2B,
+  "(-)": 0x2C,
+
+  // operators
+  "+": 0x2D,
+  "-": 0x2E,
+  "×": 0x2F,
+  "÷": 0x30,
+
+  // parentheses
+  "(": 0x31,
+  ")": 0x32,
+
+  // special
+  "x,t,θ,n": 0x33,
+  "stat": 0x34,
+  "matrix": 0x35,
+  "angle": 0x36,
+  "draw": 0x37,
+
+  // ON key (IMPORTANT)
+  "on": 0x3F
 };
 
-// CSC codes for direct key injection
-const CSC_MAP = {
-    'enter': 0x09, 'clear': 0x0F, 'up': 0x01, 'down': 0x02, 
-    'left': 0x03, 'right': 0x04, '2nd': 0x10, 'alpha': 0x11,
-    'prgm': 0x1F, 'mode': 0x0D, 'del': 0x0E, 'on': 0x1C,
-    '0': 0x30, '1': 0x31, '2': 0x32, '3': 0x33, '4': 0x34,
-    '5': 0x35, '6': 0x36, '7': 0x37, '8': 0x38, '9': 0x39,
-    '+': 0x2B, '-': 0x2D, '×': 0x2A, '÷': 0x2F, '(': 0x28, ')': 0x29, '.': 0x2E
-};
-
-const keyState = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
 const heldKeys = new Set();
-const keyHoldFrames = new Map();
-let frameCounter = 0;
-
-function updateKeypad() {
-    if (!wasmModule?._emu_keypad_event) return;
-    for (let g = 0; g < 8; g++) {
-        wasmModule._emu_keypad_event(g, keyState[g]);
-    }
-}
-
-function sendCSC(keyName, isPress) {
-    const code = CSC_MAP[keyName];
-    if (!code) return false;
-    
-    if (wasmModule._sendCSC) {
-        wasmModule._sendCSC(code);
-        console.log(`📟 CSC ${isPress ? 'PRESS' : 'RELEASE'}: ${keyName} → 0x${code.toString(16)}`);
-        return true;
-    }
-    return false;
-}
+const pressTimers = new Map();
 
 function pressKey(keyName) {
-    const m = KEY_MATRIX[keyName];
-    if (!m) return;
     if (heldKeys.has(keyName)) return;
+    if (!wasmModule?._sendCSC) return;
+    
+    const code = CSC_CODES[keyName];
+    if (code === undefined) {
+        console.warn(`No CSC code for: ${keyName}`);
+        return;
+    }
     
     heldKeys.add(keyName);
+    wasmModule._sendCSC(code);
+    document.getElementById('debug').textContent = `▼ ${keyName} (${code.toString(16)})`;
+    console.log(`📟 PRESS ${keyName} → 0x${code.toString(16)}`);
     
-    // Matrix method
-    keyState[m.g] &= ~(1 << m.b);
-    updateKeypad();
-    
-    // CSC method (direct)
-    sendCSC(keyName, true);
-    
-    // Hold for ~30 frames (500ms at 60fps)
-    keyHoldFrames.set(keyName, 30);
-    
-    document.getElementById('debug').textContent = `▼ ${keyName}`;
-    console.log(`PRESS ${keyName}: g${m.g} b${m.b} → state[${m.g}]=0x${keyState[m.g].toString(16).padStart(2,'0')}`);
+    // Auto-release after 150ms
+    const timer = setTimeout(() => {
+        releaseKey(keyName);
+    }, 150);
+    pressTimers.set(keyName, timer);
 }
 
 function releaseKey(keyName) {
-    const m = KEY_MATRIX[keyName];
-    if (!m) return;
     if (!heldKeys.has(keyName)) return;
+    if (!wasmModule?._sendCSC) return;
+    
+    const code = CSC_CODES[keyName];
+    if (code === undefined) return;
+    
+    // Clear auto-release timer
+    if (pressTimers.has(keyName)) {
+        clearTimeout(pressTimers.get(keyName));
+        pressTimers.delete(keyName);
+    }
     
     heldKeys.delete(keyName);
-    keyHoldFrames.delete(keyName);
-    
-    // Matrix method
-    keyState[m.g] |= (1 << m.b);
-    updateKeypad();
-    
-    // CSC method (direct)
-    sendCSC(keyName, false);
+    wasmModule._sendCSC(code | 0x80); // Release is code + 0x80? maybe
+    // Actually some implementations use 0 for release, let's try just sending 0
+    wasmModule._sendCSC(0); // Send null to indicate release
     
     document.getElementById('debug').textContent = `▲ ${keyName}`;
-    console.log(`RELEASE ${keyName}: g${m.g} b${m.b} → state[${m.g}]=0x${keyState[m.g].toString(16).padStart(2,'0')}`);
-}
-
-// Update keypad state every frame, handle auto-release
-function continuousKeypadUpdate() {
-    frameCounter++;
-    
-    // Auto-release keys after their hold frames expire
-    for (let [keyName, framesLeft] of keyHoldFrames) {
-        if (framesLeft <= 1) {
-            releaseKey(keyName);
-        } else {
-            keyHoldFrames.set(keyName, framesLeft - 1);
-        }
-    }
-    
-    // Send matrix state every frame (but not too often? emu handles it)
-    if (wasmModule?._emu_keypad_event) {
-        for (let g = 0; g < 8; g++) {
-            wasmModule._emu_keypad_event(g, keyState[g]);
-        }
-    }
-    
-    requestAnimationFrame(continuousKeypadUpdate);
+    console.log(`📟 RELEASE ${keyName}`);
 }
 
 function buildKeypad() {
@@ -344,11 +366,26 @@ function buildKeypad() {
         const b = document.createElement('button');
         b.className = 'btn' + (key === 'enter' ? ' enter-key' : '');
         b.textContent = key;
-        b.addEventListener('mousedown', e => { e.preventDefault(); pressKey(key); });
-        b.addEventListener('mouseup', e => { e.preventDefault(); });
-        b.addEventListener('mouseleave', () => releaseKey(key));
-        b.addEventListener('touchstart', e => { e.preventDefault(); pressKey(key); });
-        b.addEventListener('touchend', e => { e.preventDefault(); });
+        b.addEventListener('mousedown', (e) => { 
+            e.preventDefault(); 
+            pressKey(key); 
+        });
+        b.addEventListener('mouseup', (e) => { 
+            e.preventDefault(); 
+            // Don't release here - timer handles it
+        });
+        b.addEventListener('mouseleave', () => {
+            if (heldKeys.has(key)) {
+                releaseKey(key);
+            }
+        });
+        b.addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            pressKey(key); 
+        });
+        b.addEventListener('touchend', (e) => { 
+            e.preventDefault(); 
+        });
         kp.appendChild(b);
     });
 }
@@ -359,13 +396,19 @@ const keyMap = {
     '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
     '+':'+','-':'-','*':'×','/':'÷','(':'(',')':')','.':'.','^':'^'
 };
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', (e) => {
     const k = keyMap[e.key];
-    if (k) { e.preventDefault(); pressKey(k); }
+    if (k) { 
+        e.preventDefault(); 
+        pressKey(k); 
+    }
 });
-document.addEventListener('keyup', e => {
+document.addEventListener('keyup', (e) => {
     const k = keyMap[e.key];
-    if (k) { e.preventDefault(); releaseKey(k); }
+    if (k && heldKeys.has(k)) { 
+        e.preventDefault(); 
+        releaseKey(k); 
+    }
 });
 
 // ==================== EASTER EGGS ====================
@@ -395,10 +438,6 @@ async function init() {
         startRenderLoop();
         buildKeypad();
         
-        // start continuous keypad spamming
-        continuousKeypadUpdate();
-        
-        // Set main loop timing (60fps)
         if (wasmModule._emsc_set_main_loop_timing) {
             wasmModule._emsc_set_main_loop_timing(0, 16);
             log('Main loop timing set');
@@ -421,23 +460,6 @@ async function init() {
                 console.log('✅ ON released');
             }, 300);
         }, 1500);
-        
-        // test a key after boot to see if it works
-        setTimeout(() => {
-            console.log('🧪 Testing key input...');
-            pressKey('enter');
-            setTimeout(() => {
-                releaseKey('enter');
-            }, 200);
-        }, 4000);
-        
-        setTimeout(() => {
-            console.log('=== POST-BOOT ===');
-            console.log('emul_is_inited:', window.emul_is_inited);
-            console.log('emul_is_paused:', window.emul_is_paused);
-            console.log('_sendCSC exists:', !!wasmModule._sendCSC);
-            console.log('_emu_keypad_event exists:', !!wasmModule._emu_keypad_event);
-        }, 3000);
         
     } catch(e) { console.error(e); log(`Error: ${e.message}`); }
 }
