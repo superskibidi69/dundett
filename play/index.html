@@ -218,88 +218,69 @@ function startRenderLoop() {
     });
 }
 
+// CSC codes: (row << 3) | col  — from CEmu keypad matrix
 const CSC_CODES = {
-  // arrows / control
-  "up": 0x01,
-  "down": 0x02,
-  "left": 0x03,
-  "right": 0x04,
-  "enter": 0x05,
+  // Row 1: top graphing row + modifiers
+  "graph":    0x08,  // (1<<3)|0
+  "trace":    0x09,  // (1<<3)|1
+  "zoom":     0x0A,  // (1<<3)|2
+  "window":   0x0B,  // (1<<3)|3
+  "y=":       0x0C,  // (1<<3)|4
+  "2nd":      0x0D,  // (1<<3)|5
+  "mode":     0x0E,  // (1<<3)|6
+  "del":      0x0F,  // (1<<3)|7
 
-  // editing
-  "clear": 0x09,
-  "del": 0x0A,
+  // Row 2: on + functions
+  "on":       0x10,  // (2<<3)|0
+  "sto>":     0x11,  // (2<<3)|1
+  "ln":       0x12,  // (2<<3)|2
+  "log":      0x13,  // (2<<3)|3
+  "x^2":      0x14,  // (2<<3)|4
+  "math":     0x16,  // (2<<3)|6
+  "alpha":    0x17,  // (2<<3)|7
 
-  // modifiers
-  "2nd": 0x0C,
-  "alpha": 0x0D,
+  // Row 3: 0, 1, 4, 7 + trig/apps
+  "0":        0x18,  // (3<<3)|0
+  "1":        0x19,  // (3<<3)|1
+  "4":        0x1A,  // (3<<3)|2
+  "7":        0x1B,  // (3<<3)|3
+  "sin":      0x1D,  // (3<<3)|5
+  "apps":     0x1E,  // (3<<3)|6
+  "x,t,θ,n":  0x1F,  // (3<<3)|7
 
-  // top row
-  "mode": 0x0E,
-  "y=": 0x0F,
-  "window": 0x10,
-  "zoom": 0x11,
-  "trace": 0x12,
-  "graph": 0x13,
+  // Row 4: dot, 2, 5, 8 + trig/prgm
+  ".":        0x20,  // (4<<3)|0
+  "2":        0x21,  // (4<<3)|1
+  "5":        0x22,  // (4<<3)|2
+  "8":        0x23,  // (4<<3)|3
+  "(":        0x24,  // (4<<3)|4
+  "cos":      0x25,  // (4<<3)|5
+  "prgm":     0x26,  // (4<<3)|6
+  "stat":     0x27,  // (4<<3)|7
 
-  // 2nd row
-  "math": 0x14,
-  "apps": 0x15,
-  "prgm": 0x16,
-  "vars": 0x17,
-  "clear": 0x18,
+  // Row 5: neg, 3, 6, 9 + trig/vars
+  "(-)":      0x28,  // (5<<3)|0
+  "3":        0x29,  // (5<<3)|1
+  "6":        0x2A,  // (5<<3)|2
+  "9":        0x2B,  // (5<<3)|3
+  ")":        0x2C,  // (5<<3)|4
+  "tan":      0x2D,  // (5<<3)|5
+  "vars":     0x2E,  // (5<<3)|6
 
-  // trig / functions
-  "sin": 0x19,
-  "cos": 0x1A,
-  "tan": 0x1B,
-  "^": 0x1C,
+  // Row 6: enter + operators + clear
+  "enter":    0x30,  // (6<<3)|0
+  "+":        0x31,  // (6<<3)|1
+  "-":        0x32,  // (6<<3)|2
+  "×":        0x33,  // (6<<3)|3
+  "÷":        0x34,  // (6<<3)|4
+  "^":        0x35,  // (6<<3)|5
+  "clear":    0x36,  // (6<<3)|6
 
-  // misc
-  "x^2": 0x1D,
-  "log": 0x1E,
-  "ln": 0x1F,
-  "sto>": 0x20,
-
-  // numbers row 1
-  "7": 0x21,
-  "8": 0x22,
-  "9": 0x23,
-
-  // numbers row 2
-  "4": 0x24,
-  "5": 0x25,
-  "6": 0x26,
-
-  // numbers row 3
-  "1": 0x27,
-  "2": 0x28,
-  "3": 0x29,
-
-  // bottom row
-  "0": 0x2A,
-  ".": 0x2B,
-  "(-)": 0x2C,
-
-  // operators
-  "+": 0x2D,
-  "-": 0x2E,
-  "×": 0x2F,
-  "÷": 0x30,
-
-  // parentheses
-  "(": 0x31,
-  ")": 0x32,
-
-  // special
-  "x,t,θ,n": 0x33,
-  "stat": 0x34,
-  "matrix": 0x35,
-  "angle": 0x36,
-  "draw": 0x37,
-
-  // ON key (IMPORTANT)
-  "on": 0x3F
+  // Row 7: navigation
+  "down":     0x38,  // (7<<3)|0
+  "left":     0x39,  // (7<<3)|1
+  "right":    0x3A,  // (7<<3)|2
+  "up":       0x3B,  // (7<<3)|3
 };
 
 const heldKeys = new Set();
@@ -341,9 +322,7 @@ function releaseKey(keyName) {
     }
     
     heldKeys.delete(keyName);
-    wasmModule._sendCSC(code | 0x80); // Release is code + 0x80? maybe
-    // Actually some implementations use 0 for release, let's try just sending 0
-    wasmModule._sendCSC(0); // Send null to indicate release
+    wasmModule._sendCSC(0); // 0 = no key pressed (release)
     
     document.getElementById('debug').textContent = `▲ ${keyName}`;
     console.log(`📟 RELEASE ${keyName}`);
