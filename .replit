@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["emacs"]
+packages = ["emacs", "dirb", "sapling", "terminal-parrot"]
 
 [[ports]]
 localPort = 8000
