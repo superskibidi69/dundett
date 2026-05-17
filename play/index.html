@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DUNDETT Web Version — Play Online</title>
-    <meta name="description" content="Play DUNDETT directly in your browser. A TI-84 Plus CE text adventure, no calculator or download needed.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>DUNDETT — Play in Browser</title>
+    <meta name="description" content="Play DUNDETT directly in your browser. A text adventure about a missing boy, a grue, and a door behind the altar.">
     <meta name="robots" content="noindex, follow">
-    <meta name="googlebot" content="noindex, follow">
     <meta property="og:title" content="DUNDETT Web Edition">
-    <meta property="og:description" content="Play DUNDETT in your browser. No calculator required. The Grue is waiting.">
+    <meta property="og:description" content="A text adventure. No calculator required. The Grue is waiting.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dundett.pages.dev/play">
     <link rel="canonical" href="https://dundett.pages.dev/play">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
         body {
             background: #0a0a0a;
             font-family: 'Courier New', monospace;
@@ -24,8 +30,9 @@
             align-items: center;
             position: relative;
             overflow-x: hidden;
+            padding: 20px;
         }
-        
+
         .scanlines {
             position: fixed;
             top: 0;
@@ -34,36 +41,19 @@
             height: 100%;
             pointer-events: none;
             z-index: 999;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 255, 0, 0.04) 0px,
-                rgba(0, 255, 0, 0.04) 3px,
-                transparent 3px,
-                transparent 6px
-            );
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 255, 0, 0.04) 0px,
+                    rgba(0, 255, 0, 0.04) 3px,
+                    transparent 3px,
+                    transparent 6px);
             animation: scanMove 0.2s linear infinite;
         }
-        .scanlines::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.15);
-            opacity: 0;
-            animation: flicker 0.15s infinite;
-        }
+
         @keyframes scanMove {
             0% { transform: translateY(0); }
             100% { transform: translateY(6px); }
         }
-        @keyframes flicker {
-            0% { opacity: 0; }
-            50% { opacity: 0.05; }
-            100% { opacity: 0; }
-        }
-        
+
         .crt-line {
             position: fixed;
             top: 50%;
@@ -74,378 +64,392 @@
             z-index: 1000;
             pointer-events: none;
             animation: crtRoll 8s linear infinite;
-            box-shadow: 0 0 20px rgba(58, 255, 58, 0.2);
         }
+
         @keyframes crtRoll {
             0% { top: -10%; }
             100% { top: 110%; }
         }
-        
-        .calc {
+
+        .game-container {
             background: #1a1a1a;
             border: 4px solid #3a3a3a;
             border-radius: 14px;
             padding: 20px;
-            width: 540px;
-            box-shadow: 0 0 40px rgba(58,255,58,0.15), 0 15px 50px rgba(0,0,0,0.8);
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(58, 255, 58, 0.15);
             position: relative;
             z-index: 1001;
         }
-        
-        .calc-brand {
+
+        .brand {
             text-align: center;
             color: #4a4a4a;
-            font-size: 9px;
+            font-size: 10px;
             letter-spacing: 3px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-transform: uppercase;
         }
-        
+
         .screen {
             background: #0a1f0a;
             border: 3px solid #1a3a1a;
             border-radius: 6px;
-            padding: 12px;
-            width: 100%;
-            height: auto;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.6);
-            position: relative;
-            margin-bottom: 10px;
+            padding: 20px;
+            min-height: 300px;
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6);
+            margin-bottom: 20px;
         }
-        
-        canvas {
-            width: 100%;
-            height: auto;
-            image-rendering: pixelated;
-            display: block;
+
+        .location-name {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            color: #3aff3a;
+            text-transform: uppercase;
         }
-        
-        .status-row {
+
+        .description {
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            color: #6aff6a;
+        }
+
+        .menu {
             display: flex;
-            justify-content: space-between;
-            font-size: 8px;
-            color: #4a6a4a;
-            margin-bottom: 8px;
-            padding: 0 4px;
+            flex-direction: column;
+            gap: 10px;
         }
-        
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 3px;
-            max-width: 500px;
-            justify-content: center;
-            margin: 0 auto;
-        }
-        
-        .btn {
+
+        .menu-btn {
             background: #1a2a1a;
             border: 2px solid #2a4a2a;
             color: #3aff3a;
-            padding: 8px 4px;
+            padding: 10px;
             font-family: 'Courier New', monospace;
-            font-size: 9px;
+            font-size: 12px;
             cursor: pointer;
-            border-radius: 3px;
-            min-height: 30px;
+            border-radius: 5px;
             transition: all 0.1s;
-            text-transform: lowercase;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .btn:hover { background: #2a3a2a; border-color: #3aff3a; box-shadow: 0 0 8px rgba(58,255,58,0.3); }
-        .btn:active { background: #0a1f0a; transform: scale(0.95); }
-        .btn.enter-key { background: #1a2f1a; border-color: #3a5a3a; font-weight: bold; }
-        
+
+        .menu-btn:hover {
+            background: #2a3a2a;
+            border-color: #3aff3a;
+            box-shadow: 0 0 8px rgba(58, 255, 58, 0.3);
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #4a6a4a;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #2a4a2a;
+        }
+
         .warning {
             text-align: center;
-            font-size: 7px;
+            font-size: 8px;
             color: #3a5a3a;
-            margin-top: 8px;
+            margin-top: 15px;
             font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .game-container { padding: 15px; }
+            .screen { padding: 15px; }
+            .location-name { font-size: 14px; }
+            .description { font-size: 11px; }
+            .menu-btn { padding: 8px; font-size: 10px; }
         }
     </style>
 </head>
+
 <body>
+    <div class="scanlines"></div>
+    <div class="crt-line"></div>
 
-<div class="scanlines"></div>
-<div class="crt-line"></div>
+    <div class="game-container">
+        <div class="brand">TI-84 Plus CE ▸ DUNDETT WEB EDITION</div>
 
-<div class="calc">
-    <div class="calc-brand">TI-84 Plus CE ▸ DUNDETT WEB EDITION</div>
-    <div class="screen"><canvas id="screen" width="320" height="240"></canvas></div>
-    <div class="status-row">
-        <span id="status">Loading...</span>
-        <span id="debug">No input</span>
+        <div class="screen">
+            <div class="location-name" id="locationName">LOADING...</div>
+            <div class="description" id="description">Initializing DUNDETT...</div>
+            <div class="menu" id="menu"></div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status">FUN: ???</span>
+            <span id="debug">MAPLE STREET</span>
+        </div>
+        <div class="warning">The Grue is waiting in the dark.</div>
     </div>
-    <div class="keypad" id="keypad"></div>
-    <div class="warning">This page is hidden from search engines. You found it anyway.</div>
-</div>
 
-<script type="module">
-const ROM_PATH = 'ti-84ce.rom';
-const WIDTH = 320, HEIGHT = 240;
-const STATUS = document.getElementById('status');
-const CANVAS = document.getElementById('screen');
-const CTX = CANVAS.getContext('2d');
-let wasmModule = null, wasmMemory = null;
-let frameData = CTX.createImageData(WIDTH, HEIGHT);
+    <script>
+        // DUNDETT Web Edition - Pure JS, No Emulator
+        // v1.3.4 Web Port
 
-function log(msg) { STATUS.textContent = msg; console.log(msg); }
+        // Game State
+        let currentLocation = "deadEnd";
+        let memoryFragments = [0,0,0,0,0];
+        let sanity = 0;
+        let deathCount = 0;
+        let fun = Math.floor(Math.random() * 100) + 1;
+        let safeCode = Math.floor(Math.random() * 900) + 100;
+        let hasKey = 0;
+        let hasLamp = 0;
+        let lampLit = 0;
+        let crystalKey = 0;
+        let bearFed = 0;
 
-window.emul_is_inited = false;
-window.emul_is_paused = false;
-window.transferProgressCallback = () => {};
-window.transferErrorCallback = () => console.error('Transfer error');
-window.initFuncs = () => {};
-window.initLCD = () => {};
-window.enableGUI = () => { window.emul_is_inited = true; log('Ready'); };
-window.disableGUI = () => { window.emul_is_inited = false; };
-
-function drawFrame() {
-    if (!wasmModule || !window.emul_is_inited || !wasmMemory) return;
-    try {
-        const ptr = wasmModule._lcd_get_frame();
-        if (!ptr) return;
-        const src = new Uint32Array(wasmMemory, ptr, WIDTH * HEIGHT);
-        new Uint32Array(frameData.data.buffer).set(src);
-        CTX.putImageData(frameData, 0, 0);
-    } catch(e) {}
-}
-
-function startRenderLoop() {
-    requestAnimationFrame(function step() {
-        if (window.emul_is_inited) drawFrame();
-        requestAnimationFrame(step);
-    });
-}
-
-// CSC codes: (row << 3) | col  — from CEmu keypad matrix
-const CSC_CODES = {
-  // Row 1: top graphing row + modifiers
-  "graph":    0x08,  // (1<<3)|0
-  "trace":    0x09,  // (1<<3)|1
-  "zoom":     0x0A,  // (1<<3)|2
-  "window":   0x0B,  // (1<<3)|3
-  "y=":       0x0C,  // (1<<3)|4
-  "2nd":      0x0D,  // (1<<3)|5
-  "mode":     0x0E,  // (1<<3)|6
-  "del":      0x0F,  // (1<<3)|7
-
-  // Row 2: on + functions
-  "on":       0x10,  // (2<<3)|0
-  "sto>":     0x11,  // (2<<3)|1
-  "ln":       0x12,  // (2<<3)|2
-  "log":      0x13,  // (2<<3)|3
-  "x^2":      0x14,  // (2<<3)|4
-  "math":     0x16,  // (2<<3)|6
-  "alpha":    0x17,  // (2<<3)|7
-
-  // Row 3: 0, 1, 4, 7 + trig/apps
-  "0":        0x18,  // (3<<3)|0
-  "1":        0x19,  // (3<<3)|1
-  "4":        0x1A,  // (3<<3)|2
-  "7":        0x1B,  // (3<<3)|3
-  "sin":      0x1D,  // (3<<3)|5
-  "apps":     0x1E,  // (3<<3)|6
-  "x,t,θ,n":  0x1F,  // (3<<3)|7
-
-  // Row 4: dot, 2, 5, 8 + trig/prgm
-  ".":        0x20,  // (4<<3)|0
-  "2":        0x21,  // (4<<3)|1
-  "5":        0x22,  // (4<<3)|2
-  "8":        0x23,  // (4<<3)|3
-  "(":        0x24,  // (4<<3)|4
-  "cos":      0x25,  // (4<<3)|5
-  "prgm":     0x26,  // (4<<3)|6
-  "stat":     0x27,  // (4<<3)|7
-
-  // Row 5: neg, 3, 6, 9 + trig/vars
-  "(-)":      0x28,  // (5<<3)|0
-  "3":        0x29,  // (5<<3)|1
-  "6":        0x2A,  // (5<<3)|2
-  "9":        0x2B,  // (5<<3)|3
-  ")":        0x2C,  // (5<<3)|4
-  "tan":      0x2D,  // (5<<3)|5
-  "vars":     0x2E,  // (5<<3)|6
-
-  // Row 6: enter + operators + clear
-  "enter":    0x30,  // (6<<3)|0
-  "+":        0x31,  // (6<<3)|1
-  "-":        0x32,  // (6<<3)|2
-  "×":        0x33,  // (6<<3)|3
-  "÷":        0x34,  // (6<<3)|4
-  "^":        0x35,  // (6<<3)|5
-  "clear":    0x36,  // (6<<3)|6
-
-  // Row 7: navigation
-  "down":     0x38,  // (7<<3)|0
-  "left":     0x39,  // (7<<3)|1
-  "right":    0x3A,  // (7<<3)|2
-  "up":       0x3B,  // (7<<3)|3
-};
-
-const heldKeys = new Set();
-const pressTimers = new Map();
-
-function pressKey(keyName) {
-    if (heldKeys.has(keyName)) return;
-    if (!wasmModule?._sendCSC) return;
-    
-    const code = CSC_CODES[keyName];
-    if (code === undefined) {
-        console.warn(`No CSC code for: ${keyName}`);
-        return;
-    }
-    
-    heldKeys.add(keyName);
-    wasmModule._sendCSC(code);
-    document.getElementById('debug').textContent = `▼ ${keyName} (${code.toString(16)})`;
-    console.log(`📟 PRESS ${keyName} → 0x${code.toString(16)}`);
-    
-    // Auto-release after 150ms
-    const timer = setTimeout(() => {
-        releaseKey(keyName);
-    }, 150);
-    pressTimers.set(keyName, timer);
-}
-
-function releaseKey(keyName) {
-    if (!heldKeys.has(keyName)) return;
-    if (!wasmModule?._sendCSC) return;
-    
-    const code = CSC_CODES[keyName];
-    if (code === undefined) return;
-    
-    // Clear auto-release timer
-    if (pressTimers.has(keyName)) {
-        clearTimeout(pressTimers.get(keyName));
-        pressTimers.delete(keyName);
-    }
-    
-    heldKeys.delete(keyName);
-    wasmModule._sendCSC(0); // 0 = no key pressed (release)
-    
-    document.getElementById('debug').textContent = `▲ ${keyName}`;
-    console.log(`📟 RELEASE ${keyName}`);
-}
-
-function buildKeypad() {
-    const layout = [
-        ['y=','window','zoom','trace','graph'],
-        ['2nd','mode','del','prgm','clear'],
-        ['alpha','x,t,θ,n','stat'],
-        ['math','apps','sin','cos','tan','^'],
-        ['x^2','(',')','÷','×','-','+'],
-        ['sto>','ln','log','ee'],
-        ['7','8','9','4','5','6','1','2','3','0','.','(-)'],
-        ['enter'],
-        ['up','down','left','right']
-    ];
-    const kp = document.getElementById('keypad');
-    layout.flat().forEach(key => {
-        const b = document.createElement('button');
-        b.className = 'btn' + (key === 'enter' ? ' enter-key' : '');
-        b.textContent = key;
-        b.addEventListener('mousedown', (e) => { 
-            e.preventDefault(); 
-            pressKey(key); 
-        });
-        b.addEventListener('mouseup', (e) => { 
-            e.preventDefault(); 
-            // Don't release here - timer handles it
-        });
-        b.addEventListener('mouseleave', () => {
-            if (heldKeys.has(key)) {
-                releaseKey(key);
+        // Location Data
+        const locations = {
+            deadEnd: {
+                name: "DEAD END",
+                desc: "You are at a dead end of a dirt road. The road goes east. In the distance you can see it will fork. The palms are still. Too still.",
+                options: ["GO EAST"],
+                actions: [() => changeLocation("dirtRoad")]
+            },
+            dirtRoad: {
+                name: "DIRT ROAD",
+                desc: "You are on a dirt road. Trees line both sides. The road continues east and west.",
+                options: ["GO EAST", "GO WEST"],
+                actions: [() => changeLocation("fork"), () => changeLocation("deadEnd")]
+            },
+            fork: {
+                name: "FORK",
+                desc: "You are at a fork. Passages lead NE and SE. You can also go back west.",
+                options: ["GO NE", "GO SE", "GO WEST"],
+                actions: [() => changeLocation("neRoad"), () => changeLocation("seRoad"), () => changeLocation("dirtRoad")]
+            },
+            neRoad: {
+                name: "NE/SW ROAD",
+                desc: "You are on a NE/SW road. The path is well-worn.",
+                options: ["GO NE", "GO SW"],
+                actions: [() => changeLocation("building"), () => changeLocation("fork")]
+            },
+            building: {
+                name: "BUILDING ENTRANCE",
+                desc: hasKey ? "You use the key. The door creaks open. You enter a musty hallway." : "A sturdy wooden building stands before you. The door is locked. You need a key.",
+                options: hasKey ? ["GO NORTH", "GO EAST", "GO WEST", "GO BACK"] : ["GO BACK", "FEED BEAR"],
+                actions: hasKey 
+                    ? [() => changeLocation("kitchen"), () => changeLocation("darkRoom"), () => changeLocation("altar"), () => changeLocation("neRoad")]
+                    : [() => changeLocation("neRoad"), () => bearEncounter()]
+            },
+            bearArea: {
+                name: "BEAR HANGOUT",
+                desc: bearFed ? "The bear is gone. The area is peaceful. A passage leads NW." : "A ferocious bear is here! He watches you.",
+                options: bearFed ? ["GO NW"] : ["GO NW", "FEED BEAR"],
+                actions: bearFed ? [() => changeLocation("seRoad")] : [() => changeLocation("seRoad"), () => feedBear()]
+            },
+            kitchen: {
+                name: "KITCHEN",
+                desc: `An old kitchen with a dusty hearth. Rusty pots hang on the wall. Numbers on the wall: ${safeCode}`,
+                options: ["GO SOUTH"],
+                actions: [() => changeLocation("building")]
+            },
+            darkRoom: {
+                name: "DARK ROOM",
+                desc: lampLit ? "The lamp illuminates the room. Passages lead north, east, and west." : "This room is pitch black. You are likely to be eaten by a grue.",
+                options: lampLit ? ["GO NORTH", "GO EAST", "GO WEST"] : ["SEARCH FOR LAMP", "GO BACK"],
+                actions: lampLit ? [() => changeLocation("storage"), () => changeLocation("treasureVault"), () => changeLocation("building")] : [() => findLamp(), () => grueAttack()]
+            },
+            storage: {
+                name: "STORAGE ROOM",
+                desc: "Old crates and barrels fill this room. Spiderwebs cover everything. There is a safe with a 3-digit lock.",
+                options: ["ENTER CODE", "GO BACK"],
+                actions: [() => openSafe(), () => changeLocation("darkRoom")]
+            },
+            treasureVault: {
+                name: "TREASURE VAULT",
+                desc: crystalKey ? "The vault is open. A gleaming crystal key sits inside." : "A large safe on the wall. It needs a 3-digit code.",
+                options: crystalKey ? ["TAKE KEY", "GO BACK"] : ["GO BACK"],
+                actions: crystalKey ? [() => takeCrystalKey(), () => changeLocation("darkRoom")] : [() => changeLocation("darkRoom")]
+            },
+            altar: {
+                name: "ALTAR OF SACRIFICE",
+                desc: "A stone altar with a dark pit in the center. It craves something.",
+                options: crystalKey ? ["SACRIFICE KEY", "GO BACK"] : ["GO BACK"],
+                actions: crystalKey ? [() => sacrificeKey(), () => changeLocation("building")] : [() => changeLocation("building")]
+            },
+            ending: {
+                name: "SMITH'S OFFICE",
+                desc: "A man sits at a desk. He wears a suit. 'I knew you'd come. The key was always meant to be sacrificed. Now you can leave.' He points to a door.",
+                options: ["LEAVE"],
+                actions: [() => escape()]
+            },
+            mapleStreet: {
+                name: "MAPLE STREET",
+                desc: "You stand on a quiet suburban street. The houses are empty. The air is still. 680, 682, and 684 line the north side.",
+                options: ["HOUSE 680", "HOUSE 682", "HOUSE 684", "SCHOOL", "BASEMENT"],
+                actions: [() => changeLocation("house680"), () => lockedHouse(), () => lockedHouse(), () => changeLocation("school"), () => basementDeath()]
+            },
+            house680: {
+                name: "HOUSE 680",
+                desc: "The door creaks open. Dusty entry hall. A living room lies north.",
+                options: ["GO NORTH", "GO BACK"],
+                actions: [() => changeLocation("livingRoom"), () => changeLocation("mapleStreet")]
+            },
+            livingRoom: {
+                name: "LIVING ROOM",
+                desc: "A couch covered in a white sheet. A photograph sits on the mantel. 'Thomas Stock, age 12.' That was you." + (memoryFragments[0] ? "" : " [MEMORY FRAGMENT]"),
+                options: ["GO BACK"],
+                actions: [() => { if(!memoryFragments[0]) memoryFragments[0]=1; changeLocation("house680"); }]
+            },
+            school: {
+                name: "SCHOOL",
+                desc: "A boarded-up building. One door hangs open. Inside smells like dust and old paper.",
+                options: ["ENTER", "GO BACK"],
+                actions: [() => changeLocation("computerLab"), () => changeLocation("mapleStreet")]
+            },
+            computerLab: {
+                name: "COMPUTER LAB",
+                desc: "Rows of dusty monitors. One screen glows. 'THE FUNNY NUMBER IS THE KEY.' Your FUN value is " + fun + ".",
+                options: ["GO BACK"],
+                actions: [() => changeLocation("school")]
             }
-        });
-        b.addEventListener('touchstart', (e) => { 
-            e.preventDefault(); 
-            pressKey(key); 
-        });
-        b.addEventListener('touchend', (e) => { 
-            e.preventDefault(); 
-        });
-        kp.appendChild(b);
-    });
-}
+        };
 
-const keyMap = {
-    'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right',
-    'Enter':'enter','Backspace':'del','Delete':'clear',
-    '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
-    '+':'+','-':'-','*':'×','/':'÷','(':'(',')':')','.':'.','^':'^'
-};
-document.addEventListener('keydown', (e) => {
-    const k = keyMap[e.key];
-    if (k) { 
-        e.preventDefault(); 
-        pressKey(k); 
-    }
-});
-document.addEventListener('keyup', (e) => {
-    const k = keyMap[e.key];
-    if (k && heldKeys.has(k)) { 
-        e.preventDefault(); 
-        releaseKey(k); 
-    }
-});
-
-// ==================== EASTER EGGS ====================
-console.log("%cDUNDETT WEB EDITION", "color:#3aff3a;font-family:monospace;font-size:16px;font-weight:bold;");
-console.log("%cThe emulator is held together with duct tape and prayers.", "color:#6aff6a;font-family:monospace;");
-console.log("%cType 'grue()' if you are brave.", "color:#4a6a4a;font-family:monospace;");
-window.grue = () => { console.log("%cTHE GRUE SEES YOU.", "color:#ff3a3a;font-family:monospace;font-weight:bold;font-size:14px;"); console.log("%cEven in the browser. Even in the dark.", "color:#6aff6a;font-family:monospace;"); };
-window.dundett = () => { console.log("%cDUNDETT v1.3.4 — Web Edition (beta)", "color:#3aff3a;font-family:monospace;font-weight:bold;"); console.log("%cKeypad: semi-functional. Emulator: barely alive. Vibes: immaculate.", "color:#6aff6a;font-family:monospace;"); };
-
-// ==================== INIT ====================
-async function init() {
-    try {
-        log('Loading...');
-        const ModuleFactory = (await import('./WebCEmu.js')).default;
-        wasmModule = await ModuleFactory({
-            locateFile: p => p,
-            print: t => console.log(t),
-            printErr: t => console.error(t)
-        });
-        wasmMemory = wasmModule.memory?.buffer || wasmModule.wasmMemory?.buffer || wasmModule.HEAPU8?.buffer || null;
-        
-        const romResp = await fetch(ROM_PATH);
-        if (!romResp.ok) throw new Error(`ROM ${romResp.status}`);
-        wasmModule.FS.writeFile('CE.rom', new Uint8Array(await romResp.arrayBuffer()));
-        log('ROM loaded');
-        
-        startRenderLoop();
-        buildKeypad();
-        
-        if (wasmModule._emsc_set_main_loop_timing) {
-            wasmModule._emsc_set_main_loop_timing(0, 16);
-            log('Main loop timing set');
+        function changeLocation(loc) {
+            currentLocation = loc;
+            render();
         }
-        
-        wasmModule.callMain([]);
-        log('Started');
-        
-        if (wasmModule._emsc_resume_main_loop) {
-            wasmModule._emsc_resume_main_loop();
-            log('Main loop resumed');
-        }
-        
-        // send ON key to boot
-        setTimeout(() => {
-            console.log('Booting calculator...');
-            pressKey('on');
-            setTimeout(() => {
-                releaseKey('on');
-                console.log('✅ ON released');
-            }, 300);
-        }, 1500);
-        
-    } catch(e) { console.error(e); log(`Error: ${e.message}`); }
-}
 
-window.pressKey = pressKey;
-window.releaseKey = releaseKey;
-init();
-</script>
+        function bearEncounter() {
+            if(!bearFed) {
+                showMessage("The bear tears your head off. You are dead.");
+                deathCount++;
+                resetGame();
+            }
+        }
+
+        function feedBear() {
+            bearFed = 1;
+            hasKey = 1;
+            showMessage("You offer food to the bear. It gobbles it down and leaves a key behind. It wanders off into the forest.");
+            changeLocation("bearArea");
+        }
+
+        function findLamp() {
+            hasLamp = 1;
+            lampLit = 1;
+            showMessage("You feel around and find an oil lamp. It is full of oil. You light it.");
+            changeLocation("darkRoom");
+        }
+
+        function grueAttack() {
+            showMessage("In the pitch black, you hear a slithering sound. A grue devours you. You are dead.");
+            deathCount++;
+            resetGame();
+        }
+
+        function openSafe() {
+            let code = prompt("ENTER 3 DIGITS:", "");
+            if(parseInt(code) === safeCode) {
+                crystalKey = 1;
+                showMessage("The safe clicks open. Inside is a gleaming crystal key.");
+            } else {
+                showMessage("WRONG CODE. The safe explodes! You are killed instantly.");
+                deathCount++;
+                resetGame();
+            }
+            render();
+        }
+
+        function takeCrystalKey() {
+            crystalKey = 1;
+            showMessage("You take the crystal key.");
+            changeLocation("darkRoom");
+        }
+
+        function sacrificeKey() {
+            showMessage("You place the crystal key on the altar. It glows... The altar opens. A door appears.");
+            changeLocation("ending");
+        }
+
+        function escape() {
+            showMessage("You step through. The sun warms your face. You are free.");
+            showMessage("...OR ARE YOU?");
+            resetGame();
+        }
+
+        function lockedHouse() {
+            showMessage("The door is locked. Maybe later...");
+            render();
+        }
+
+        function basementDeath() {
+            showMessage("You accidentally trip on the stairs and die. What a bad way to go...");
+            deathCount++;
+            resetGame();
+        }
+
+        function showMessage(msg) {
+            document.getElementById('description').innerHTML = msg;
+            document.getElementById('menu').innerHTML = '<button class="menu-btn" onclick="continueGame()">CONTINUE</button>';
+        }
+
+        function continueGame() {
+            render();
+        }
+
+        function resetGame() {
+            currentLocation = "deadEnd";
+            memoryFragments = [0,0,0,0,0];
+            sanity = 0;
+            hasKey = 0;
+            hasLamp = 0;
+            lampLit = 0;
+            crystalKey = 0;
+            bearFed = 0;
+            fun = Math.floor(Math.random() * 100) + 1;
+            safeCode = Math.floor(Math.random() * 900) + 100;
+            render();
+        }
+
+        function render() {
+            const loc = locations[currentLocation];
+            if(!loc) return;
+
+            document.getElementById('locationName').innerText = loc.name;
+            document.getElementById('description').innerHTML = loc.desc;
+            document.getElementById('status').innerHTML = `FUN: ${fun} | SANITY: ${sanity} | DEATHS: ${deathCount}`;
+            document.getElementById('debug').innerHTML = currentLocation.toUpperCase();
+
+            const menuDiv = document.getElementById('menu');
+            menuDiv.innerHTML = '';
+
+            loc.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.innerText = opt;
+                btn.onclick = loc.actions[i];
+                menuDiv.appendChild(btn);
+            });
+        }
+
+        window.changeLocation = changeLocation;
+        window.continueGame = continueGame;
+
+        // Easter eggs
+        console.log("%cDUNDETT WEB EDITION", "color:#3aff3a;font-family:monospace;font-size:16px;");
+        console.log("%cThe Grue is watching.", "color:#6aff6a;font-family:monospace;");
+        window.grue = () => console.log("%c👁️ THE GRUE SEES YOU 👁️", "color:#ff3a3a;font-family:monospace;font-size:14px;");
+
+        render();
+    </script>
 </body>
+
 </html>
