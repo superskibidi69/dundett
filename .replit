@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["emacs", "dirb", "sapling", "terminal-parrot"]
+packages = ["emacs", "dirb", "sapling", "terminal-parrot", "tailscale", "rustc", "gophish"]
 
 [[ports]]
 localPort = 8000
