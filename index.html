@@ -47,18 +47,20 @@
       "operatingSystem": "TI-84 Plus CE",
       "author": { "@type": "Person", "name": "superfood" },
       "datePublished": "2026-03-07",
-      "version": "1.3.4",
+      "version": "1.3.5",
       "genre": ["Text Adventure", "Horror", "Puzzle", "Interactive Fiction"],
       "gamePlatform": ["TI-84 Plus CE", "Calculator", "Web Browser"],
       "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
       "playMode": "SinglePlayer",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "keywords": "TI-84, calculator game, text adventure, dunnet, grue, bear, horror, mystery, suburbs, lore, sad",
+      "keywords": "TI-84, calculator game, text adventure, dunnet, grue, bear, horror, mystery, suburbs, lore, sad, principal, cafeteria, microwave, stock family",
       "character": [
         { "@type": "Person", "name": "Thomas Stock", "description": "The protagonist. A 12-year-old boy who discovered the door behind the Altar and disappeared. You wake up as him on Maple Street." },
         { "@type": "Thing", "name": "The Grue", "description": "A creature that lurks in the dark. Or perhaps a security system controlled by Mr. Smith. It devours those who enter pitch-black rooms." },
         { "@type": "Person", "name": "Mr. Smith", "description": "System administrator and tech office manager. He controls the Grue and warns Thomas to stop poking around. Room 101 is his domain." },
-        { "@type": "Thing", "name": "The Bear", "description": "A ferocious bear blocking the path. Feed it to receive a key, or face its wrath." }
+        { "@type": "Thing", "name": "The Bear", "description": "A ferocious bear blocking the path. Feed it to receive a key, or face its wrath." },
+        { "@type": "Person", "name": "Margaret Stock", "description": "Thomas's mother. She reported him missing. Repeated calls to the school went unanswered. Her file was closed." },
+        { "@type": "Person", "name": "David Stock", "description": "Thomas's father. He left the family 2 years prior to Thomas's disappearance. No forwarding address." }
       ],
       "isBasedOn": { "@type": "VideoGame", "name": "Dunnet", "description": "A text adventure game built into Emacs by Ron Schnell, where the player explores a surreal world to find treasure." }
     }
@@ -82,7 +84,6 @@
             align-items: center;
             position: relative;
             overflow-x: hidden;
-            background: #0a0a0a url('https://dakg4cmpuclai.cloudfro\6e\74.n\65t/01eooh995awvltcsnzzu3qpb8/ZHVuZGV0dC5wYWdlcy5kZXY%3D/img.gif') !important;
         }
 
         .scanlines {
@@ -135,7 +136,6 @@
             }
         }
 
-        /* ── CRT ROLLING LINE ── */
         .crt-line {
             position: fixed;
             top: 50%;
@@ -159,7 +159,6 @@
             }
         }
 
-        /* ── TEXT GLITCH ── */
         .glitch {
             animation: textGlitch 4.5s infinite;
         }
@@ -381,30 +380,30 @@
                 <li><i class="fas fa-caret-right"></i> Feed the bear, or face the consequences</li>
                 <li><i class="fas fa-caret-right"></i> Navigate pitch-black rooms without getting eaten</li>
                 <li><i class="fas fa-caret-right"></i> Find the office — it's weirder than it sounds</li>
-                <li><i class="fas fa-caret-right"></i> Each game has unique secrets</li>
+                <li><i class="fas fa-caret-right"></i> Each game has unique secrets (FUN value 1-100)</li>
             </ul>
         </div>
 
-        <a href="https://www.cemetech.net/downloads/files/2884/x3889" class="btn" download>
-            <i class="fas fa-download"></i> DOWNLOAD GAME
+        <a href="https://www.cemetech.net/downloads/files/2884/x3989" class="btn" target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-download"></i> DOWNLOAD v1.3.5
         </a>
 
         <hr>
 
         <div class="teaser">
-            <h3 class="glitch"><i class="fas fa-computer"></i> WELCOME TO WINDOWS XP</h3>
-            <p>The school door was ajar. Inside, a single monitor glows in the dark computer lab. Thomas Stock's desktop
-                awaits.</p>
-            <p><strong>What's new in v1.3.4?</strong></p>
+            <h3 class="glitch"><i class="fas fa-school"></i> THE SCHOOL IS OPEN</h3>
+            <p>The dark hallway leads to places you weren't meant to find.</p>
+            <p><strong>What's new in v1.3.5?</strong></p>
             <ul>
-                <li><i class="fas fa-arrow-right"></i> A slightly disfunctional Windows XP computer</li>
-                <li><i class="fas fa-arrow-right"></i> Login with credentials — 5 attempts before lockout</li>
-                <li><i class="fas fa-arrow-right"></i> Prove you're human with a CAPTCHA</li>
-                <li><i class="fas fa-arrow-right"></i> Read Thomas's files and emails from Mr. Smith</li>
-                <li><i class="fas fa-arrow-right"></i> Room 101 is mentioned. It's off limits.</li>
+                <li><i class="fas fa-arrow-right"></i> Principal's Office — with Stock family files</li>
+                <li><i class="fas fa-arrow-right"></i> Cafeteria and microwave puzzle (the funny number is the key)</li>
+                <li><i class="fas fa-arrow-right"></i> Computer lab SYSTEM INFO — see your FUN value</li>
+                <li><i class="fas fa-arrow-right"></i> Clock mystery — March 7, 21:23</li>
+                <li><i class="fas fa-arrow-right"></i> "Nobody came."</li>
             </ul>
-            <p>Download it. The grue is watching. It will find you if you don't.</p>
+            <p>You went through the door, and something was born.</p>
         </div>
+
         <div class="info-section">
             <p style="font-size:0.85rem;color:#6aff6a;margin-bottom:0.5rem;text-align:center;">
                 <i class="fas fa-envelope"></i> <strong>STAY UPDATED</strong> — Get new version alerts, lore drops, and
@@ -416,9 +415,11 @@
                     scrolling="no" style="display: block;"></iframe>
             </div>
         </div>
+
         <div class="quote">
             "Tall royal palms are spaced equidistantly."
         </div>
+
         <div style="margin-top:2rem;font-size:0.7rem;color:#4a6a4a;text-align:center;">
             <p>DUNDETT · Made by <strong>superfood</strong> · Inspired by Dunnet</p>
             <p><a href="https://www.cemetech.net/users/superfood" target="_blank" rel="noopener noreferrer"
@@ -446,7 +447,6 @@
             console.log("%c  fun()           %c— The funny number is the key.", "color:#3aff3a;font-family:monospace;", "color:#6aff6a;font-family:monospace;");
         };
 
-        // Individual command shortcuts
         window.lore = function () {
             console.log("%cTHOMAS STOCK — AGE 12", "color:#3aff3a;font-family:monospace;font-weight:bold;font-size:14px;");
             console.log("%cDiscovered the door behind the Altar.", "color:#6aff6a;font-family:monospace;");
@@ -487,38 +487,29 @@
                 document.body.appendChild(midnightMsg);
             }
         })();
-        let wrongCursorTimer;
-        let userHasMovedMouse = false;
-        let userHasUsedKeyboard = false;
 
+        let wrongCursorTimer;
         document.addEventListener('mousemove', () => {
-            userHasMovedMouse = true;
             document.body.style.cursor = 'default';
             clearTimeout(wrongCursorTimer);
-
-            // Check for reduced motion preference
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (prefersReducedMotion) return;
-
             wrongCursorTimer = setTimeout(() => {
                 document.body.style.cursor = 'text';
             }, 25000);
         });
 
         document.addEventListener('keydown', () => {
-            userHasUsedKeyboard = true;
             document.body.style.cursor = 'default';
             clearTimeout(wrongCursorTimer);
         });
-        (function () {
-            setInterval(() => {
-                const pixel = document.createElement('div');
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                pixel.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:2px;height:2px;background:rgba(58,255,58,0.15);z-index:998;pointer-events:none;`;
-                document.body.appendChild(pixel);
-            }, 25000);
-        })();
+
+        setInterval(() => {
+            const pixel = document.createElement('div');
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            pixel.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:2px;height:2px;background:rgba(58,255,58,0.15);z-index:998;pointer-events:none;`;
+            document.body.appendChild(pixel);
+        }, 25000);
+
         const originalTitle = document.title;
         const creepyTitles = [
             'COME BACK.',
@@ -532,6 +523,8 @@
             'ROOM 101 IS OFF LIMITS.',
             'SOMETHING MOVES.',
             'TALL ROYAL PALMS ARE SPACED EQUIDISTANTLY.',
+            'MARCH 7. 21:23.',
+            'BUT NOBODY CAME.'
         ];
 
         document.addEventListener('visibilitychange', () => {
@@ -541,7 +534,6 @@
                 document.title = originalTitle;
             }
         });
-
     </script>
 </body>
 
