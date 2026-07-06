@@ -1,25 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>DUNDETT — Play in Browser</title>
     <meta name="description" content="Play DUNDETT directly in your browser. A text adventure about a missing boy, a grue, and a door behind the altar.">
     <meta name="robots" content="noindex, follow">
-    <meta property="og:title" content="DUNDETT Web Edition">
-    <meta property="og:description" content="A text adventure. No calculator required. The Grue is waiting.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://dundett.pages.dev/play">
-    <link rel="canonical" href="https://dundett.pages.dev/play">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body {
             background: #0a0a0a;
             font-family: 'Courier New', monospace;
@@ -28,11 +16,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
-            overflow-x: hidden;
             padding: 20px;
         }
-
         .scanlines {
             position: fixed;
             top: 0;
@@ -41,676 +26,1278 @@
             height: 100%;
             pointer-events: none;
             z-index: 999;
-            background: repeating-linear-gradient(0deg,
-                    rgba(0, 255, 0, 0.04) 0px,
-                    rgba(0, 255, 0, 0.04) 3px,
-                    transparent 3px,
-                    transparent 6px);
+            background: repeating-linear-gradient(0deg, rgba(0,255,0,0.04) 0px, rgba(0,255,0,0.04) 3px, transparent 3px, transparent 6px);
             animation: scanMove 0.2s linear infinite;
         }
-
-        @keyframes scanMove {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(6px); }
-        }
-
+        @keyframes scanMove { 0% { transform: translateY(0); } 100% { transform: translateY(6px); } }
         .crt-line {
             position: fixed;
             top: 50%;
             left: 0;
             width: 100%;
             height: 2px;
-            background: rgba(58, 255, 58, 0.3);
+            background: rgba(58,255,58,0.3);
             z-index: 1000;
             pointer-events: none;
             animation: crtRoll 8s linear infinite;
         }
-
-        @keyframes crtRoll {
-            0% { top: -10%; }
-            100% { top: 110%; }
-        }
-
+        @keyframes crtRoll { 0% { top: -10%; } 100% { top: 110%; } }
         .game-container {
             background: #1a1a1a;
             border: 4px solid #3a3a3a;
             border-radius: 14px;
             padding: 20px;
-            max-width: 700px;
+            max-width: 750px;
             width: 100%;
-            box-shadow: 0 0 40px rgba(58, 255, 58, 0.15);
+            box-shadow: 0 0 60px rgba(58,255,58,0.08), inset 0 0 30px rgba(58,255,58,0.02);
             position: relative;
             z-index: 1001;
         }
-
         .brand {
             text-align: center;
-            color: #4a4a4a;
-            font-size: 10px;
-            letter-spacing: 3px;
-            margin-bottom: 15px;
+            color: #4a6a4a;
+            font-size: 9px;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
             text-transform: uppercase;
+            opacity: 0.6;
         }
-
+        .brand span { color: #3aff3a; opacity: 1; }
         .screen {
-            background: #0a1f0a;
-            border: 3px solid #1a3a1a;
-            border-radius: 6px;
-            padding: 20px;
-            min-height: 300px;
-            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6);
-            margin-bottom: 20px;
+            background: #0a1a0a;
+            border: 2px solid #1a3a1a;
+            border-radius: 4px;
+            padding: 24px;
+            min-height: 350px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), inset 0 0 80px rgba(0,20,0,0.4);
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
         }
-
+        .screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(0,10,0,0.3) 100%);
+            pointer-events: none;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .menu.hidden { opacity: 0; transition: opacity 0.3s ease; }
+        .menu.visible { opacity: 1; transition: opacity 0.3s ease; }
+        .menu { transition: opacity 0.3s ease; }
         .location-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            margin-bottom: 18px;
+            letter-spacing: 3px;
             color: #3aff3a;
             text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(58,255,58,0.15);
+            position: relative;
+            z-index: 2;
         }
-
+        .location-name::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 1px;
+            background: #2a4a2a;
+            margin: 10px auto 0;
+        }
         .description {
             font-size: 13px;
-            line-height: 1.5;
-            margin-bottom: 25px;
+            line-height: 1.6;
+            margin-bottom: 24px;
             color: #6aff6a;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .menu-btn {
-            background: #1a2a1a;
-            border: 2px solid #2a4a2a;
-            color: #3aff3a;
-            padding: 10px;
+            white-space: pre-wrap;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            padding: 4px 0;
+            position: relative;
+            min-height: 80px;
+            z-index: 2;
+        }
+        .menu { display: flex; flex-direction: column; gap: 6px; opacity: 1; transition: opacity 0.24s ease-in; z-index: 2; position: relative; }
+        .menu.hidden { opacity: 0; pointer-events: none; }
+        .menu.visible { opacity: 1; pointer-events: auto; }
+        .menu-btn {
+            background: #0f1f0f;
+            border: 1px solid #1a3a1a;
+            color: #3aff3a;
+            padding: 10px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
             cursor: pointer;
-            border-radius: 5px;
-            transition: all 0.1s;
+            border-radius: 3px;
+            transition: all 0.15s;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            text-align: left;
+            position: relative;
+            opacity: 0.9;
+            z-index: 2;
         }
-
+        .menu-btn::before {
+            content: '>';
+            color: #2a5a2a;
+            margin-right: 12px;
+            font-weight: bold;
+        }
         .menu-btn:hover {
-            background: #2a3a2a;
+            background: #1a2f1a;
             border-color: #3aff3a;
-            box-shadow: 0 0 8px rgba(58, 255, 58, 0.3);
+            box-shadow: 0 0 20px rgba(58,255,58,0.08);
+            opacity: 1;
         }
-
-        .menu-btn:active {
-            transform: scale(0.98);
-        }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            font-size: 9px;
-            color: #4a6a4a;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #2a4a2a;
-        }
-
+        .menu-btn:hover::before { color: #3aff3a; }
+        .menu-btn:active { transform: scale(0.98); }
         .warning {
             text-align: center;
-            font-size: 8px;
-            color: #3a5a3a;
-            margin-top: 15px;
+            font-size: 7px;
+            color: #2a4a2a;
+            margin-top: 12px;
             font-style: italic;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            z-index: 2;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        @media (max-width: 600px) {
+            .game-container { padding: 14px; }
+            .screen { padding: 16px; min-height: 280px; }
+            .location-name { font-size: 16px; }
+            .description { font-size: 11px; }
+            .menu-btn { padding: 8px 12px; font-size: 11px; }
+            .menu-btn::before { margin-right: 8px; }
         }
 
-        @media (max-width: 600px) {
-            .game-container { padding: 15px; }
-            .screen { padding: 15px; }
-            .location-name { font-size: 14px; }
-            .description { font-size: 11px; }
-            .menu-btn { padding: 8px; font-size: 10px; }
+        /* ===== CORRUPTION EFFECTS ===== */
+        body.corrupted .scanlines {
+            animation-duration: 0.05s !important;
+            opacity: 0.8 !important;
+        }
+
+        body.corrupted .crt-line {
+            animation-duration: 2s !important;
+        }
+
+        body.corrupted .location-name {
+            animation: textGlitch 0.5s infinite;
+        }
+
+        body.corrupted .description {
+            animation: textGlitch 0.7s infinite;
+        }
+
+        body.corrupted .screen {
+            animation: screenShake 0.1s infinite alternate;
+        }
+
+        body.corrupted .screen::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(58,255,58,0.2);
+            z-index: 3;
+            pointer-events: none;
+            animation: tear 0.3s infinite alternate;
+        }
+
+        @keyframes textGlitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            60% { transform: translate(-1px, -1px); }
+            80% { transform: translate(1px, 2px); }
+        }
+
+        @keyframes screenShake {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(1px, -1px); }
+        }
+
+        @keyframes tear {
+            0% { top: 10%; }
+            25% { top: 30%; }
+            50% { top: 50%; }
+            75% { top: 70%; }
+            100% { top: 90%; }
+        }
+
+        body.corrupted .menu-btn {
+            animation: btnGlitch 1s infinite;
+        }
+
+        @keyframes btnGlitch {
+            0%, 90%, 100% { border-color: #2a4a2a; }
+            92% { border-color: #ff3a3a; }
+            94% { border-color: #3aff3a; }
+            96% { border-color: #2a4a2a; }
+        }
+
+        body.corrupted-high .screen {
+            animation: screenShake 0.05s infinite alternate;
+        }
+
+        body.corrupted-high .location-name {
+            animation: textGlitch 0.2s infinite;
+        }
+
+        body.corrupted-high .description {
+            animation: textGlitch 0.3s infinite;
+        }
+
+        body.corrupted-high .scanlines {
+            animation-duration: 0.02s !important;
+            opacity: 0.9 !important;
+        }
+
+        /* Ghost text overlay */
+        .ghost-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            color: rgba(58,255,58,0.05);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            padding: 24px;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        body.corrupted .ghost-text {
+            opacity: 1;
+        }
+
+        body.corrupted-high .ghost-text {
+            opacity: 0.7;
         }
     </style>
 </head>
-
 <body>
-    <div class="scanlines"></div>
-    <div class="crt-line"></div>
+<div class="scanlines"></div>
+<div class="crt-line"></div>
 
-    <div class="game-container">
-        <div class="brand">TI-84 Plus CE ▸ DUNDETT WEB EDITION</div>
-
-        <div class="screen">
-            <div class="location-name" id="locationName">LOADING...</div>
-            <div class="description" id="description">Initializing DUNDETT...</div>
-            <div class="menu" id="menu"></div>
-        </div>
-
-        <div class="status-bar">
-            <span id="status">FUN: ???</span>
-            <span id="debug">MAPLE STREET</span>
-        </div>
-        <div class="warning">The Grue is waiting in the dark.</div>
+<div class="game-container">
+    <div class="brand">TI-84 Plus CE <span>▸</span> DUNDETT WEB EDITION</div>
+    <div class="screen">
+        <div class="ghost-text" id="ghostText"></div>
+        <div class="location-name" id="locationName">LOADING...</div>
+        <div class="description" id="description">Initializing DUNDETT...</div>
+        <div class="menu" id="menu"></div>
     </div>
+    <div class="warning">✦ THE GRUE IS WAITING IN THE DARK ✦</div>
+</div>
 
-    <script>
-        // DUNDETT Web Edition - Pure JS, No Emulator
-        // v1.3.5 Web Port (Expanded)
+<script>
+// DUNDETT Web Edition — Pure JavaScript
+// Matches TI-BASIC v1.3.5 source code exactly
 
-        // Game State (mirrors TI-84 L1 and L2 arrays)
-        let currentLocation = "deadEnd";
-        let L1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; // Main state flags
-        let L2 = [0,0]; // Grue sanity + death count
-        let deathCount = 0;
-        let fun = Math.floor(Math.random() * 100) + 1;
-        let safeCode = Math.floor(Math.random() * 900) + 100;
-        let grueMode = 0; // Track grue atmosphere intensity
-        let attemptsRemaining = 5;
-        let loginLocked = false;
-        let loginLockTime = 0;
+// ===== LOCALSTORAGE SAVES =====
+function loadSave() {
+    try {
+        const save = JSON.parse(localStorage.getItem('dundett_save'));
+        if (save) {
+            return save;
+        }
+    } catch(e) {}
+    return null;
+}
 
-        const grueMsgs = ["YOU HEAR BREATHING.", "THE GRUE IS CLOSE.", "SOMETHING MOVES.", "YOU SEE SOMETHING MOVE."];
+function saveGame() {
+    try {
+        localStorage.setItem('dundett_save', JSON.stringify({
+            sanity: L2[0],
+            deaths: L2[1],
+            z: Z,
+            fun: F,
+            safeCode: P,
+            l1: L1
+        }));
+    } catch(e) {}
+}
 
-        // Location Data - Comprehensive
-        const locations = {
-            deadEnd: {
-                name: "DEAD END",
-                desc: () => {
-                    if(L2[0]>=5 && Math.random()<0.3) return grueMsgs[Math.floor(Math.random()*grueMsgs.length)];
-                    if(L2[1]>0 && fun===67) return "YOU ARE AT A DEAD END OF A DIRT ROAD...OR ARE YOU?";
-                    return "YOU ARE AT A DEAD END OF A DIRT ROAD. THE ROAD GOES EAST. IN THE DISTANCE YOU CAN SEE IT WILL FORK. THE PALMS ARE STILL. TOO STILL.";
-                },
-                options: () => fun===67 ? ["GO EAST", "GO WEST"] : ["GO EAST"],
-                actions: () => fun===67 ? [() => changeLocation("dirtRoad"), () => changeLocation("deadVoid")] : [() => changeLocation("dirtRoad")]
-            },
-            deadVoid: {
-                name: "VOID",
-                desc: "...OR ARE YOU?",
-                options: () => ["RETURN"],
-                actions: () => [() => changeLocation("deadEnd")]
-            },
-            dirtRoad: {
-                name: "E/W DIRT ROAD",
-                desc: "YOU ARE ON A DIRT ROAD. TREES LINE BOTH SIDES. THE ROAD CONTINUES EAST AND WEST. THERE IS A LARGE BOULDER HERE. IT CANNOT BE MOVED.",
-                options: () => ["GO EAST", "GO WEST"],
-                actions: () => [() => changeLocation("fork"), () => changeLocation("deadEnd")]
-            },
-            fork: {
-                name: "FORK",
-                desc: "YOU ARE AT A FORK. PASSAGES LEAD NE AND SE. YOU CAN ALSO GO BACK WEST.",
-                options: () => ["GO SE", "GO NE", "GO WEST", "OFFICE"],
-                actions: () => [() => changeLocation("seRoad"), () => changeLocation("neRoad"), () => changeLocation("dirtRoad"), () => changeLocation("office")]
-            },
-            neRoad: {
-                name: "NE/SW ROAD",
-                desc: "YOU ARE ON A NE/SW ROAD. THE PATH IS WELL-WORN, SUGGESTING TRAVELERS PASS OFTEN.",
-                options: () => ["GO NE", "GO SW"],
-                actions: () => [() => changeLocation("building"), () => changeLocation("fork")]
-            },
-            seRoad: {
-                name: "SE/NW ROAD",
-                desc: "YOU ARE ON A SE/NW ROAD. THE PATH WINDS THROUGH DENSE FOREST. THE AIR GROWS COLDER AS YOU GO SOUTHEAST.",
-                options: () => ["GO SE", "GO NW"],
-                actions: () => [() => changeLocation("bearArea"), () => changeLocation("fork")]
-            },
-            building: {
-                name: "BUILDING ENTRANCE",
-                desc: () => L1[0] ? "YOU USE THE KEY. THE DOOR CREAKS OPEN. YOU ENTER A MUSTY HALLWAY. PASSAGES LEAD NORTH, EAST, AND WEST." : "A STURDY WOODEN BUILDING STANDS BEFORE YOU. THE DOOR IS LOCKED. YOU NEED A KEY.",
-                options: () => L1[0] ? ["GO NORTH", "GO EAST", "GO WEST", "GO OUT"] : ["GO OUT"],
-                actions: () => L1[0] ? [() => changeLocation("kitchen"), () => changeLocation("darkRoom"), () => changeLocation("altar"), () => changeLocation("neRoad")] : [() => changeLocation("neRoad")]
-            },
-            bearArea: {
-                name: "BEAR HANGOUT",
-                desc: () => L1[1] ? "THE BEAR IS GONE. THE AREA IS PEACEFUL. A PASSAGE LEADS NW." : "A FEROCIOUS BEAR IS HERE! HE WATCHES YOU. YOU ARE AT THE END OF THE ROAD.",
-                options: () => L1[1] ? ["GO NW"] : ["GO NW", "FEED BEAR"],
-                actions: () => L1[1] ? [() => changeLocation("clearing")] : [() => changeLocation("seRoad"), () => feedBear()]
-            },
-            kitchen: {
-                name: "KITCHEN",
-                desc: () => {
-                    let txt = `AN OLD KITCHEN WITH A DUSTY HEARTH. RUSTY POTS HANG ON THE WALL.`;
-                    if(!L1[6]) {
-                        txt += ` A SMALL BOX SITS ON THE COUNTER. NUMBERS ON THE WALL: ${safeCode}`;
-                        L1[6] = 1;
-                    } else {
-                        txt += ` A SMALL BOX SITS ON THE COUNTER. THE NUMBERS HAVE FADED AWAY.`;
-                        if(fun===42) txt += ` THE ANSWER IS 42. BUT WHAT WAS THE QUESTION?`;
-                    }
-                    return txt;
-                },
-                options: () => !L1[2] ? ["OPEN BOX", "GO SOUTH"] : ["GO SOUTH"],
-                actions: () => !L1[2] ? [() => openBox(), () => changeLocation("building")] : [() => changeLocation("building")]
-            },
-            darkRoom: {
-                name: "DARK ROOM",
-                desc: () => {
-                    if(L2[0]>=9) return grueMsgs[0];
-                    L2[0]+=2;
-                    if(L1[4]<2) return "THIS ROOM IS PITCH BLACK. YOU HEAR DRIPPING WATER. YOU ARE LIKELY TO BE EATEN BY A GRUE.";
-                    return "THE LAMP ILLUMINATES THE ROOM. IT'S A SMALL CHAMBER WITH PASSAGES NORTH, EAST, AND WEST.";
-                },
-                options: () => {
-                    if(L1[4]<2) return !L1[3] ? ["SEARCH FOR LAMP", "GO WEST"] : ["GO WEST"];
-                    return fun===66 ? ["GO NORTH", "GO EAST", "GO WEST", "???"] : ["GO NORTH", "GO EAST", "GO WEST"];
-                },
-                actions: () => {
-                    if(L1[4]<2) return !L1[3] ? [() => findLamp(), () => changeLocation("building")] : [() => changeLocation("building")];
-                    return fun===66 ? [() => changeLocation("storage"), () => changeLocation("treasureVault"), () => changeLocation("building"), () => mysterRoom()] : [() => changeLocation("storage"), () => changeLocation("treasureVault"), () => changeLocation("building")];
+// ===== GAME STATE =====
+let L1 = new Array(25).fill(0);
+let L2 = [0, 0];
+let Z = 0;
+let F = 0;
+let P = 0;
+let currentLocation = "mainMenu";
+let typingInterval = null;
+let pendingLocation = null;
+let previousDescription = "";
+let ghostTextInterval = null;
+
+const Str1 = "YOU HEAR BREATHING.";
+const Str2 = "THE GRUE IS CLOSE.";
+const Str3 = "SOMETHING MOVES.";
+const Str4 = "YOU SEE SOMETHING MOVE.";
+let Str9 = "";
+
+// ===== CORRUPTION GLITCH WORDS =====
+const glitchWords = {
+    "DOOR": "VOID",
+    "KEY": "BLOOD",
+    "LIGHT": "DARK",
+    "YOU": "IT",
+    "ROAD": "RIFT",
+    "BEAR": "SHADOW",
+    "GRUE": "???",
+    "SMITH": "THEY",
+    "THOMAS": "YOU",
+    "MOTHER": "ECHO",
+    "FATHER": "STATIC"
+};
+
+function applyGlitchWords(text) {
+    if (L2[0] < 7) return text;
+    const words = Object.keys(glitchWords);
+    const glitchChance = Math.min(0.3, (L2[0] - 6) * 0.05);
+    return text.split(' ').map(word => {
+        const clean = word.replace(/[^a-zA-Z]/g, '');
+        if (clean.length > 2 && Math.random() < glitchChance) {
+            const replacement = glitchWords[clean.toUpperCase()];
+            if (replacement) {
+                return word.replace(clean, replacement);
+            }
+        }
+        return word;
+    }).join(' ');
+}
+
+// ===== MAIN MENU =====
+function showMainMenu() {
+    currentLocation = "mainMenu";
+    document.getElementById('locationName').textContent = "D U N D E T T";
+    document.getElementById('description').textContent = "VERSION 1.3.5\nA TEXT ADVENTURE\nBASED ON DUNNET";
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+    const btn1 = document.createElement('button');
+    btn1.className = 'menu-btn';
+    btn1.textContent = "BEGIN ADVENTURE";
+    btn1.onclick = () => { startGame(); };
+    menuDiv.appendChild(btn1);
+    const btn2 = document.createElement('button');
+    btn2.className = 'menu-btn';
+    btn2.textContent = "HELP";
+    btn2.onclick = () => { showHelp(); };
+    menuDiv.appendChild(btn2);
+    const btn3 = document.createElement('button');
+    btn3.className = 'menu-btn';
+    btn3.textContent = "CHANGELOG";
+    btn3.onclick = () => { showChangelog(); };
+    menuDiv.appendChild(btn3);
+    const btn4 = document.createElement('button');
+    btn4.className = 'menu-btn';
+    btn4.textContent = "QUIT";
+    btn4.onclick = () => { showQuit(); };
+    menuDiv.appendChild(btn4);
+    updateCorruption();
+}
+
+function showHelp() {
+    document.getElementById('locationName').textContent = "HELP";
+    document.getElementById('description').textContent = 
+        "USE MENUS TO MOVE\nEXPLORE EVERYWHERE\nREMEMBER CODES\nBEWARE THE GRUE\nIF ANYTHING BREAKS, SET Z\nTO 0\nPRESS ENTER";
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
+    btn.textContent = "BACK TO START";
+    btn.onclick = () => { showMainMenu(); };
+    menuDiv.appendChild(btn);
+    const btn2 = document.createElement('button');
+    btn2.className = 'menu-btn';
+    btn2.textContent = "BEGIN GAME";
+    btn2.onclick = () => { startGame(); };
+    menuDiv.appendChild(btn2);
+    const btn3 = document.createElement('button');
+    btn3.className = 'menu-btn';
+    btn3.textContent = "QUIT";
+    btn3.onclick = () => { showQuit(); };
+    menuDiv.appendChild(btn3);
+    updateCorruption();
+}
+
+function showChangelog() {
+    document.getElementById('locationName').textContent = "CHANGELOG";
+    document.getElementById('description').textContent = 
+        "v1.3.5\n- FIXED SAFE ISSUES\n- EXPANDED THE SCHOOL\n- MORE LORE?\n- FIXED SOME FLASHING";
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
+    btn.textContent = "BACK TO START";
+    btn.onclick = () => { showMainMenu(); };
+    menuDiv.appendChild(btn);
+    updateCorruption();
+}
+
+function showQuit() {
+    document.getElementById('locationName').textContent = "THANKS FOR PLAYING!";
+    document.getElementById('description').textContent = "SEE YOU NEXT TIME.";
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
+    btn.textContent = "RESTART";
+    btn.onclick = () => { showMainMenu(); };
+    menuDiv.appendChild(btn);
+    updateCorruption();
+}
+
+// ===== INITIALIZE =====
+function initGame() {
+    const save = loadSave();
+    if (save) {
+        L2[0] = save.sanity || 0;
+        L2[1] = save.deaths || 0;
+        Z = save.z || 1;
+        F = save.fun || Math.floor(Math.random() * 100) + 1;
+        P = save.safeCode || Math.floor(Math.random() * 900) + 100;
+        L1 = save.l1 || new Array(25).fill(0);
+    } else {
+        L1 = new Array(25).fill(0);
+        if (Z === 0) {
+            L2 = [0, 0];
+            Z = 1;
+        }
+        F = Math.floor(Math.random() * 100) + 1;
+        P = Math.floor(Math.random() * 900) + 100;
+    }
+    currentLocation = "deadEnd";
+    render();
+}
+
+function startGame() {
+    const save = loadSave();
+    if (save) {
+        L2[0] = save.sanity || 0;
+        L2[1] = save.deaths || 0;
+        Z = save.z || 1;
+        F = save.fun || Math.floor(Math.random() * 100) + 1;
+        P = save.safeCode || Math.floor(Math.random() * 900) + 100;
+        L1 = save.l1 || new Array(25).fill(0);
+    } else {
+        L1 = new Array(25).fill(0);
+        if (Z === 0) {
+            L2 = [0, 0];
+            Z = 1;
+        }
+        F = Math.floor(Math.random() * 100) + 1;
+        P = Math.floor(Math.random() * 900) + 100;
+    }
+    currentLocation = "deadEnd";
+    render();
+}
+
+// ===== CORRUPTION =====
+function updateCorruption() {
+    const body = document.body;
+    const sanity = L2[0];
+    
+    body.classList.remove('corrupted', 'corrupted-high');
+    
+    if (sanity >= 8) {
+        body.classList.add('corrupted', 'corrupted-high');
+        document.getElementById('locationName').style.textShadow = '0 0 30px rgba(255,0,0,0.3), 0 0 60px rgba(255,0,0,0.1)';
+        const screen = document.querySelector('.screen');
+        if (screen) screen.style.borderColor = '#3a1a1a';
+        body.style.filter = 'brightness(0.85) contrast(1.2)';
+    } else if (sanity >= 5) {
+        body.classList.add('corrupted');
+        document.getElementById('locationName').style.textShadow = '0 0 20px rgba(255,100,0,0.2)';
+        const screen = document.querySelector('.screen');
+        if (screen) screen.style.borderColor = '#2a2a1a';
+        body.style.filter = 'brightness(0.95) contrast(1.1)';
+    } else {
+        document.getElementById('locationName').style.textShadow = '0 0 20px rgba(58,255,58,0.15)';
+        const screen = document.querySelector('.screen');
+        if (screen) screen.style.borderColor = '#1a3a1a';
+        body.style.filter = 'none';
+    }
+    
+    // Whisper effect at high sanity
+    const warning = document.querySelector('.warning');
+    if (sanity >= 9 && Math.random() < 0.02) {
+        const whispers = ["THE GRUE IS WATCHING", "IT KNOWS", "YOU ARE NOT ALONE", "TURN BACK", "SOMETHING MOVES", "HEAR BREATHING"];
+        warning.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+        setTimeout(() => {
+            warning.textContent = "✦ THE GRUE IS WAITING IN THE DARK ✦";
+        }, 2000);
+    }
+}
+
+// ===== LOCATION DATA =====
+const locations = {
+    deadEnd: {
+        name: "DEAD END",
+        desc: function() {
+            let baseDesc = "";
+            if (L2[1] > 0) {
+                if (F === 67) baseDesc = "DEAD END\nYOU ARE AT A DEAD END\n...OR ARE YOU?";
+                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END\nOF A DIRT ROAD. THE\nROAD GOES EAST. IN\nTHE DISTANCE YOU CAN\nSEE IT WILL FORK.\nTHE PALMS ARE STILL.\nTOO STILL.";
+            } else {
+                if (F === 67) baseDesc = "DEAD END\n...OR ARE YOU?";
+                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END\nOF A DIRT ROAD. THE\nROAD GOES EAST. IN\nTHE DISTANCE YOU CAN\nSEE IT WILL FORK.\nTALL ROYAL PALMS ARE\nSPACED EQUIDISTANTLY.";
+            }
+            
+            if (L2[0] >= 5 && Math.random() < 0.33) {
+                return Str4 + "\n\n" + baseDesc;
+            }
+            if (L2[0] >= 7 && Math.random() < 0.33) return Str3 + "\n\n" + baseDesc;
+            if (L2[0] >= 9) return Str1 + "\n\n" + baseDesc;
+            return baseDesc;
+        },
+        options: function() {
+            if (F === 67) return ["EAST", "WEST"];
+            return ["EAST"];
+        },
+        actions: function() {
+            if (F === 67) return [() => goTo("dirtRoad"), () => goTo("devRoom")];
+            return [() => goTo("dirtRoad")];
+        }
+    },
+    dirtRoad: {
+        name: "E/W DIRT ROAD",
+        desc: function() {
+            let base = "E/W DIRT ROAD\nYOU ARE ON A DIRT\nROAD. TREES LINE\nBOTH SIDES. THE ROAD\nCONTINUES EAST AND\nWEST. THERE IS A\nLARGE BOULDER HERE.\nIT CANNOT BE MOVED.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["EAST", "WEST"],
+        actions: () => [() => goTo("fork"), () => goTo("deadEnd")]
+    },
+    fork: {
+        name: "FORK",
+        desc: function() {
+            let base = "FORK\nYOU ARE AT A FORK.\nPASSAGES LEAD NE AND\nSE. YOU CAN ALSO GO\nBACK WEST.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["SE", "NE", "WEST", "OFFICE"],
+        actions: () => [() => goTo("seRoad"), () => goTo("neRoad"), () => goTo("dirtRoad"), () => goTo("officeBuilding")]
+    },
+    seRoad: {
+        name: "SE/NW ROAD",
+        desc: function() {
+            let base = "SE/NW ROAD\nYOU ARE ON A SE/NW\nROAD. THE PATH WINDS\nTHROUGH DENSE FOREST.\nTHE AIR GROWS COLDER\nAS YOU GO SOUTHEAST.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["SE", "NW"],
+        actions: () => [() => goTo("bearHangout"), () => goTo("fork")]
+    },
+    bearHangout: {
+        name: "BEAR HANGOUT",
+        desc: function() {
+            let base = "";
+            if (L1[2] === 0) {
+                base = "BEAR HANGOUT\nYOU ARE AT THE END\nOF THE ROAD. A\nPASSAGE LEADS NW.\nA FEROCIOUS BEAR IS\nHERE! HE IS A BEAUTY,\nWITH THICK BROWN FUR\nAND SHARP CLAWS. HE\nWATCHES YOU.";
+            } else {
+                base = "BEAR HANGOUT\nTHE BEAR IS GONE.\nTHE AREA IS PEACEFUL.\nA PASSAGE LEADS NW.\nA FAINT PATH GOES SE.";
+                if (L2[1] > 0 && L1[2] === 1) {
+                    base += "\nTHE BEAR NODS.\nIT REMEMBERS YOU.";
                 }
-            },
-            storage: {
-                name: "STORAGE ROOM",
-                desc: "OLD CRATES AND BARRELS FILL THIS ROOM. SPIDERWEBS COVER EVERYTHING. THERE IS A SAFE WITH A 3-DIGIT LOCK.",
-                options: () => L1[5] ? ["GO EAST"] : ["ENTER CODE", "GO EAST"],
-                actions: () => L1[5] ? [() => changeLocation("darkRoom")] : [() => openSafe(), () => changeLocation("darkRoom")]
-            },
-            treasureVault: {
-                name: "TREASURE VAULT",
-                desc: () => L1[5] ? "A SMALL CHAMBER WITH A LARGE SAFE ON THE WALL. THE SAFE IS OPEN." : "A SMALL CHAMBER WITH A LARGE SAFE ON THE WALL. IT NEEDS A 3-DIGIT CODE.",
-                options: () => ["GO WEST"],
-                actions: () => [() => changeLocation("darkRoom")]
-            },
-            altar: {
-                name: "ALTAR OF SACRIFICE",
-                desc: () => L1[5] ? "A STONE ALTAR WITH A DARK PIT IN THE CENTER. THE CRYSTAL KEY PULSES." : "A STONE ALTAR WITH A DARK PIT IN THE CENTER. IT CRAVES SOMETHING.",
-                options: () => L1[5] ? ["SACRIFICE KEY", "LEAVE"] : ["LEAVE"],
-                actions: () => L1[5] ? [() => sacrificeKey(), () => changeLocation("building")] : [() => changeLocation("building")]
-            },
-            aquarium: {
-                name: "EMPTY AQUARIUM",
-                desc: "ENDLESS TANKS STRETCH INTO THE DARKNESS. NO WATER. NO FISH. JUST GLASS AND SILENCE. SOMETHING WATCHES.",
-                options: () => ["GO DEEPER", "EXAMINE TANK", "LISTEN", "LEAVE"],
-                actions: () => [() => goDeeper(), () => changeLocation("aquarium"), () => changeLocation("aquarium"), () => changeLocation("altar")]
-            },
-            office: {
-                name: "OFFICE BUILDING",
-                desc: "CUBICLES STRETCH INTO INFINITY. A PRINTER HUMS. A COFFEE MACHINE BREWS ENDLESSLY. SOMETHING MOVES IN THE VENTS.",
-                options: () => ["EXAMINE CUBICLE", "GET COFFEE", "USE ELEVATOR", "CHECK VENTS", "BOSS'S OFFICE", "GO STAIRS"],
-                actions: () => [() => changeLocation("cubicle"), () => getCoffee(), () => useElevator(), () => checkVents(), () => changeLocation("bossOffice"), () => changeLocation("fork")]
-            },
-            cubicle: {
-                name: "CUBICLE",
-                desc: () => {
-                    let txt = "A CUBICLE WITH A DESK. A NOTE SAYS: 'THE BEAR HAS YOUR RESERVATION.'";
-                    if(!L1[9]) txt += " A CALCULATOR SITS ON THE DESK.";
-                    else txt += " THE DESK IS EMPTY.";
-                    return txt;
-                },
-                options: () => !L1[9] ? ["TAKE CALC", "LEAVE"] : ["LEAVE"],
-                actions: () => !L1[9] ? [() => { L1[9]=1; showMessage("YOU TAKE THE OFFICE CALCULATOR. IT HAS A STICKER: 'PROPERTY OF SMITH'"); changeLocation("office"); }, () => changeLocation("office")] : [() => changeLocation("office")]
-            },
-            bossOffice: {
-                name: "BOSS'S OFFICE",
-                desc: () => L1[9] ? "A SUIT BEHIND A DESK. 'I SEE YOU TOOK THE COMPANY CALCULATOR.' HE SMILES. 'YOU'RE HIRED.' YOU NOW WORK HERE. FOREVER." : "A SUIT BEHIND A DESK. 'YOU DON'T WORK HERE.' SECURITY ESCORTS YOU OUT.",
-                options: () => L1[9] ? ["CONTEMPLATE FATE"] : ["LEAVE"],
-                actions: () => L1[9] ? [() => { showMessage("YOU STEP THROUGH THE WINDOW AND FALL."); resetGame(); }] : [() => changeLocation("office")]
-            },
-            clearing: {
-                name: "CLEARING",
-                desc: "A SMALL SUNNY CLEARING. YOU NOTICE A STRANGE SPINNING DEVICE IN THE CENTER.",
-                options: () => !L1[8] ? ["EXAMINE SPINNER", "GO NW"] : ["GO NW"],
-                actions: () => !L1[8] ? [() => changeLocation("spinner"), () => changeLocation("seRoad")] : [() => changeLocation("seRoad")]
-            },
-            spinner: {
-                name: "THE SPINNER",
-                desc: "A MYSTERIOUS MACHINE WITH A SPINNING ARROW. IT HUMS WITH ENERGY.",
-                options: () => ["SPIN THE WHEEL", "LEAVE"],
-                actions: () => [() => spinWheel(), () => changeLocation("clearing")]
-            },
-            mapleStreet: {
-                name: "MAPLE STREET",
-                desc: "YOU STAND ON A QUIET SUBURBAN STREET. THE HOUSES ARE EMPTY. YOU FEEL LIKE YOU LIVED HERE ONCE. 680, 682, AND 684 LINE THE NORTH SIDE.",
-                options: () => ["HOUSE 680", "HOUSE 682", "HOUSE 684", "SCHOOL", "BASEMENT"],
-                actions: () => [() => changeLocation("house680"), () => lockedHouse(), () => lockedHouse(), () => changeLocation("school"), () => basementDeath()]
-            },
-            house680: {
-                name: "HOUSE 680",
-                desc: "THE DOOR CREAKS OPEN. YOU STEP INTO A DUSTY ENTRY HALL.",
-                options: () => ["GO NORTH", "GO EAST", "GO WEST", "GO UP", "GO OUT"],
-                actions: () => [() => changeLocation("livingRoom"), () => changeLocation("diningRoom"), () => changeLocation("kitchenHome"), () => changeLocation("upstairs"), () => changeLocation("mapleStreet")]
-            },
-            livingRoom: {
-                name: "LIVING ROOM",
-                desc: () => {
-                    let txt = "A COUCH COVERED IN A WHITE SHEET. A STONE MANTEL HOLDS A SINGLE PHOTOGRAPH. A CALENDAR HANGS ON THE WALL. A DATE IS CIRCLED IN RED.";
-                    if(!L1[0]) txt += " [MEMORY FRAGMENT]";
-                    return txt;
-                },
-                options: () => ["READ PHOTO", "CHECK CALENDAR", "GO BACK"],
-                actions: () => [() => readPhoto(), () => changeLocation("livingRoom"), () => changeLocation("house680")]
-            },
-            diningRoom: {
-                name: "DINING ROOM",
-                desc: "A LONG WOODEN TABLE WITH FOUR CHAIRS. A CRACKED CHANDELIER HANGS ABOVE. DISHES ARE STILL SET OUT, COVERED IN DUST.",
-                options: () => ["GO BACK"],
-                actions: () => [() => changeLocation("house680")]
-            },
-            kitchenHome: {
-                name: "KITCHEN",
-                desc: () => L1[1] ? "THE BOX IS EMPTY." : "A KITCHEN. RUSTY POTS HANG FROM HOOKS. A SMALL WOODEN BOX SITS ON THE COUNTER.",
-                options: () => !L1[1] ? ["OPEN BOX", "GO BACK"] : ["GO BACK"],
-                actions: () => !L1[1] ? [() => { L1[1]=1; showMessage("YOU OPEN THE BOX. INSIDE IS A RUSTY KEY. IT LOOKS LIKE IT MIGHT FIT THE ATTIC DOOR UPSTAIRS."); changeLocation("kitchenHome"); }, () => changeLocation("house680")] : [() => changeLocation("house680")]
-            },
-            upstairs: {
-                name: "UPPER HALLWAY",
-                desc: "A SHORT HALLWAY WITH THREE DOORS. AN ATTIC DOOR IS TO THE WEST. BEDROOMS TO NORTH AND EAST. STAIRS GO DOWN.",
-                options: () => ["GO NORTH", "GO EAST", "GO WEST", "GO DOWN"],
-                actions: () => [() => changeLocation("bedroom1"), () => changeLocation("bedroom2"), () => changeLocation("attic"), () => changeLocation("house680")]
-            },
-            bedroom1: {
-                name: "BEDROOM 1",
-                desc: () => {
-                    let txt = "A TWIN BED WITH MUSTY SHEETS. A SMALL DESK. A JOURNAL LIES OPEN.";
-                    return txt;
-                },
-                options: () => ["READ JOURNAL", "GO BACK"],
-                actions: () => [() => readJournal(), () => changeLocation("upstairs")]
-            },
-            bedroom2: {
-                name: "BEDROOM 2",
-                desc: "A SMALLER ROOM. A CHILD'S BED. A TOY CHEST IN THE CORNER.",
-                options: () => ["OPEN CHEST", "GO BACK"],
-                actions: () => [() => openChest(), () => changeLocation("upstairs")]
-            },
-            attic: {
-                name: "ATTIC",
-                desc: () => L1[1] ? "DUSTY BOXES AND OLD TOYS. A LETTER SITS ON TOP OF A CRATE. YOU OPEN IT. THE PAPER IS YELLOWED. IT READS: 'COME HOME, THOMAS. YOUR ROOM IS JUST HOW YOU LEFT IT. THE DOOR IS ALWAYS OPEN. BUT YOU KEEP WALKING PAST. WHY WON'T YOU COME HOME?' - MOM" : "THE ATTIC DOOR IS LOCKED. YOU NEED A KEY.",
-                options: () => ["GO BACK"],
-                actions: () => [() => changeLocation("upstairs")]
-            },
-            school: {
-                name: "SCHOOL",
-                desc: "A BOARDED-UP BUILDING. ONE DOOR HANGS OPEN. INSIDE SMELLS LIKE DUST AND OLD PAPER.",
-                options: () => ["ENTER", "GO BACK"],
-                actions: () => [() => changeLocation("schoolHall"), () => changeLocation("mapleStreet")]
-            },
-            schoolHall: {
-                name: "DARK HALLWAY",
-                desc: "LOCKERS LINE BOTH SIDES. A FAINT LIGHT FLICKERS FROM BENEATH A DOOR LABELED COMPUTER LAB.",
-                options: () => ["GO NORTH", "GO BACK"],
-                actions: () => [() => changeLocation("computerLab"), () => changeLocation("school")]
-            },
-            computerLab: {
-                name: "COMPUTER LAB",
-                desc: () => L1[11] ? "ROWS OF DUSTY MONITORS. ONE SCREEN GLOWS SOFTLY." : "ROWS OF DUSTY MONITORS. ONE SCREEN GLOWS SOFTLY. A LOGIN PROMPT BLINKS.",
-                options: () => ["LOG IN", "GO BACK"],
-                actions: () => [() => promptLogin(), () => changeLocation("schoolHall")]
-            },
-            desktop: {
-                name: "DESKTOP",
-                desc: "[1] MAP.TXT  [2] NOTES.TXT  [3] INBOX",
-                options: () => ["MAP.TXT", "NOTES.TXT", "INBOX", "LOG OUT"],
-                actions: () => [() => readMap(), () => readNotes(), () => checkInbox(), () => changeLocation("computerLab")]
-            },
-            end: {
-                name: "SMITH'S OFFICE",
-                desc: "A MAN SITS AT A DESK. HE WEARS A SUIT. 'I KNEW YOU'D COME. THE KEY WAS ALWAYS MEANT TO BE SACRIFICED. NOW YOU CAN LEAVE.' HE POINTS TO A DOOR. BEYOND IT IS DAYLIGHT.",
-                options: () => ["LEAVE"],
-                actions: () => [() => escape()]
-            }
-        };
-
-        function changeLocation(loc) {
-            currentLocation = loc;
-            render();
-        }
-
-        function bearEncounter() {
-            if(!L1[1]) {
-                showMessage("THE BEAR TEARS YOUR HEAD OFF. YOU ARE DEAD.");
-                deathCount++;
-                resetGame();
-            }
-        }
-
-        function feedBear() {
-            L1[0] = 1; // Key obtained
-            L1[1] = 1; // Bear fed
-            showMessage("YOU OFFER FOOD TO THE BEAR. IT SNIFFS, THEN GOBBLES IT DOWN. THE BEAR IS GRATEFUL AND LEAVES SOMETHING BEHIND AS IT WANDERS OFF INTO THE FOREST.");
-            changeLocation("bearArea");
-        }
-
-        function findLamp() {
-            L1[3] = 1;
-            L1[4] = 1;
-            showMessage("YOU FEEL AROUND AND FIND AN OIL LAMP. IT IS FULL OF OIL. YOU CAN LIGHT IT.");
-            changeLocation("darkRoom");
-        }
-
-        function openBox() {
-            L1[2] = 1;
-            showMessage("YOU OPEN THE BOX. INSIDE IS A SHINY SILVER COIN AND A NOTE THAT READS: 'TREASURE LIES EAST, BUT BEWARE THE DARK'");
-            changeLocation("kitchen");
-        }
-
-        function openSafe() {
-            let code = prompt("ENTER 3 DIGITS:", "");
-            if(parseInt(code) === safeCode) {
-                L1[5] = 1;
-                showMessage("THE SAFE CLICKS OPEN. INSIDE IS A GLEAMING CRYSTAL KEY.");
-            } else {
-                if(fun===77 && L1[10]===1) {
-                    showMessage("THE CODE IS WRONG, BUT THE SAFE SEEMS LUCKY TODAY. TRY AGAIN?");
-                    L1[10]++;
-                    render();
-                    return;
+                if (F > 80 && Math.random() < 0.1) {
+                    L2[0] = Math.min(10, L2[0] + 1);
+                    base += "\nTHE BEAR WHISPERS:\n'...FUNNY NUMBER...'";
                 }
-                showMessage("WRONG CODE. THE SAFE EXPLODES! SHARDS OF METAL FLY EVERYWHERE. YOU ARE KILLED INSTANTLY.");
-                deathCount++;
-                resetGame();
             }
-            render();
-        }
-
-        function sacrificeKey() {
-            showMessage("YOU PLACE THE CRYSTAL KEY ON THE ALTAR. IT GLOWS... THE ALTAR OPENS. A DOOR APPEARS. BEYOND IT IS AN AQUARIUM.");
-            changeLocation("aquarium");
-        }
-
-        function goDeeper() {
-            let d = Math.floor(Math.random()*8)+1;
-            let msgs = [
-                "A SINGLE TANK WITH A RUSTY SIGN: 'THE GRUE WAS HERE'",
-                "A TANK WITH A MIRROR. YOU SEE YOURSELF. YOUR REFLECTION BLINKS. YOU DON'T.",
-                `A TANK WITH A NOTE: ${fun}`,
-                "A TANK WITH A DOOR. IT OPENS TO EMPTY ROOMS. JUST MORE TANKS.",
-                "A TANK WITH A FISH. BUT THERE'S NO WATER. IT FLOATS IN AIR.",
-                "A TANK WITH A LADDER. IT GOES DOWN INTO THE DARKNESS.",
-                "A TANK WITH NOTHING. BUT THE GLASS IS CRACKED. BEYOND IT IS A LIGHT.",
-                "YOU FEEL PULLED... AND FIND YOURSELF IN A DIFFERENT PLACE. A MAN SITS AT A DESK. HE WEARS A SUIT. 'I KNEW YOU'D COME. THE KEY WAS ALWAYS MEANT TO BE SACRIFICED. NOW YOU CAN LEAVE.'"
-            ];
-            showMessage(msgs[d-1]);
-            if(d===8) changeLocation("end");
-        }
-
-        function mysterRoom() {
-            if(fun===66 && !L1[7]) {
-                L1[7]=1;
-                showMessage("................\n................\n..WHO ARE YOU?..\n................\n................\n\nA VOICE ECHOES:\n666");
-                changeLocation("darkRoom");
-            }
-        }
-
-        function getCoffee() {
-            let r = Math.floor(Math.random()*4)+1;
-            if(r===1) {
-                showMessage("THE COFFEE BURNS YOUR THROAT. IT WAS NOT COFFEE. IT WAS LIQUID GRUE. YOU DISSOLVE FROM WITHIN.");
-                deathCount++;
-                resetGame();
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: function() {
+            if (L1[2] === 0) return ["SE", "NW", "FEED BEAR"];
+            return ["SE", "NW"];
+        },
+        actions: function() {
+            if (L1[2] === 0) {
+                return [() => bearDeathAnnoyed(), () => bearDeathChase(), () => feedBear()];
             } else {
-                showMessage("YOU DRINK. IT'S AWFUL. BUT YOU FEEL... CLEARER.");
-                L2[0] = Math.max(0, L2[0]-1);
-                changeLocation("office");
+                return [() => goTo("clearing"), () => goTo("seRoad")];
             }
         }
-
-        function useElevator() {
-            let l = Math.floor(Math.random()*6)+1;
-            let locs = ["deadEnd", "bearArea", "kitchen", "office", "computerLab", "school"];
-            showMessage("THE ELEVATOR DOORS OPEN. INSIDE, A BEAR IN A SUIT. 'GOING DOWN?'");
-            if(l===5) {
-                showMessage("THE ELEVATOR CABLES SNAP! YOU PLUMMET DOWN THE SHAFT. YOU LAND WITH A TERRIBLE CRUNCH.");
-                deathCount++;
-                resetGame();
+    },
+    neRoad: {
+        name: "NE/SW ROAD",
+        desc: function() {
+            let base = "NE/SW ROAD\nYOU ARE ON A NE/SW\nROAD. THE PATH IS\nWELL-WORN, SUGGESTING\nTRAVELERS PASS OFTEN.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["NE", "SW"],
+        actions: () => [() => goTo("building"), () => goTo("fork")]
+    },
+    building: {
+        name: "BUILDING ENTRANCE",
+        desc: function() {
+            let base = "";
+            if (L1[1] === 0) {
+                base = "BUILDING ENTRANCE\nYOU ARE AT THE END\nOF THE ROAD. A STURDY\nWOODEN BUILDING\nSTANDS TO THE NE.\nTHE DOOR IS LOCKED.\nYOU NEED A KEY.";
             } else {
-                changeLocation(locs[l-1]);
+                base = "BUILDING ENTRANCE\nYOU USE THE KEY. THE\nDOOR CREAKS OPEN.\nYOU ENTER A MUSTY HALLWAY.\nPASSAGES LEAD NORTH, EAST, AND WEST.";
             }
-        }
-
-        function checkVents() {
-            showMessage("YOU OPEN THE VENT. EYES GLOW INSIDE. A GRUE POUNCES! 'FINALLY, DELIVERY!' IT CHOMPS HAPPILY.");
-            deathCount++;
-            resetGame();
-        }
-
-        function spinWheel() {
-            L1[8] = 1;
-            showMessage("THE ARROW SPINS...\n(TELEPORTING YOU TO MAPLE STREET)");
-            changeLocation("mapleStreet");
-        }
-
-        function readPhoto() {
-            showMessage("A FAMILY PORTRAIT. A MOTHER, A FATHER, AND A CHILD. THE CHILD'S FACE IS BLURRED, BUT ON THE BACK: 'THOMAS STOCK, AGE 12'. THAT WAS YOU.");
-            if(!L1[0]) L1[0]=1;
-            changeLocation("livingRoom");
-        }
-
-        function readJournal() {
-            showMessage("MOST PAGES ARE TORN OUT. ONE REMAINS: 'I DREW THE MAP MYSELF. THE GRUE ISN'T REAL. IT'S A STORY TO KEEP US FROM LEAVING. I FOUND THE DOOR BEHIND THE ALTAR. TOMORROW I ESCAPE.' THE DATE IS THREE YEARS AGO. YOU NEVER LEFT.");
-            if(!L1[12]) L1[12]=1;
-            changeLocation("bedroom1");
-        }
-
-        function openChest() {
-            showMessage("INSIDE ARE OLD STUFFED ANIMALS. A NOTE SAYS: 'FOR THOMAS, AGE 7. LOVE, GRANDMA.' SHE NEVER CAME THAT BIRTHDAY. SHE WAS ALREADY GONE. YOU NEVER TOLD ANYONE HOW MUCH IT HURT.");
-            if(!L1[13]) L1[13]=1;
-            changeLocation("bedroom2");
-        }
-
-        function lockedHouse() {
-            showMessage("THE DOOR IS LOCKED. MAYBE LATER...");
-            render();
-        }
-
-        function basementDeath() {
-            showMessage("YOU ACCIDENTALLY TRIP ON THE STAIRS AND DIE. WHAT A BAD WAY TO GO...");
-            deathCount++;
-            resetGame();
-        }
-
-        function promptLogin() {
-            if(loginLocked) {
-                showMessage(`LOGIN LOCKED. TIME REMAINING: ${Math.max(0, 60-Math.floor((Date.now()-loginLockTime)/1000))} SECONDS`);
-                render();
-                return;
-            }
-            let user = prompt("LOGIN:", "");
-            let pass = prompt("PASSWORD:", "");
-            if(user==="STOCK" && pass==="THOMAS") {
-                L1[11] = 1;
-                attemptsRemaining = 5;
-                showMessage("ACCESS GRANTED. WELCOME, THOMAS STOCK.");
-                changeLocation("desktop");
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: function() {
+            if (L1[1] === 0) return ["TRY AGAIN", "GO SW"];
+            return ["NORTH", "EAST", "WEST", "OUT"];
+        },
+        actions: function() {
+            if (L1[1] === 0) {
+                return [() => goTo("building"), () => goTo("neRoad")];
             } else {
-                attemptsRemaining--;
-                if(attemptsRemaining<=0) {
-                    loginLocked = true;
-                    loginLockTime = Date.now();
-                    showMessage("ACCESS DENIED. TOO MANY ATTEMPTS. PLEASE WAIT 60 SECONDS.");
-                    setTimeout(() => { loginLocked=false; }, 60000);
-                } else {
-                    showMessage(`ACCESS DENIED. ATTEMPTS REMAINING: ${attemptsRemaining}`);
+                return [() => goTo("kitchen"), () => goTo("darkRoom"), () => goTo("altar"), () => goTo("neRoad")];
+            }
+        }
+    },
+    kitchen: {
+        name: "KITCHEN",
+        desc: function() {
+            let desc = "KITCHEN\nAN OLD KITCHEN WITH\nA DUSTY HEARTH. RUSTY\nPOTS HANG ON THE WALL.";
+            if (L1[7] === 0) {
+                desc += "\nA SMALL BOX SITS ON\nTHE COUNTER.\nNUMBERS ON THE WALL:\n" + P;
+                L1[7] = 1;
+            } else {
+                desc += "\nA SMALL BOX SITS ON\nTHE COUNTER.\nTHE NUMBERS HAVE\nFADED AWAY.";
+                if (F === 42) {
+                    desc += "\n\nTHE ANSWER IS 42.\nBUT WHAT WAS THE\nQUESTION?";
                 }
-                render();
+                if (L2[1] > 0) {
+                    desc += "\nTHE NUMBERS FLICKER.";
+                }
+            }
+            if (L2[0] >= 9) return Str1 + "\n\n" + desc;
+            if (L2[0] >= 7) return Str3 + "\n\n" + desc;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + desc;
+            return desc;
+        },
+        options: function() {
+            if (L1[3] === 0) return ["OPEN BOX", "SOUTH"];
+            return ["SOUTH"];
+        },
+        actions: function() {
+            if (L1[3] === 0) {
+                return [() => openBox(), () => goTo("building")];
+            } else {
+                return [() => goTo("building")];
             }
         }
-
-        function readMap() {
-            showMessage("FILE: MAP.TXT\n\nI UPLOADED THE MAP. THE DOOR IS BEHIND THE ALTAR. THE GRUE ISN'T REAL. IT'S A SECURITY SYSTEM. SMITH CONTROLS IT.");
-            if(!L1[12]) L1[12]=1;
-            changeLocation("desktop");
+    },
+    darkRoom: {
+        name: "DARK ROOM",
+desc: function() {
+    if (L2[0] >= 9) return Str1;
+    if (L2[0] >= 7) return Str3;
+    if (L2[0] >= 5 && Math.random() < 0.33) return Str4;
+    
+    // Check L1[4] === 1 first (lamp found, needs lighting)
+    if (L1[4] === 1) {
+        L1[4] = 2;
+        L2[0] = Math.max(0, L2[0] - 1);
+        return "DARK ROOM\nYOU LIGHT THE LAMP.\nTHE ROOM IS REVEALED.\nIT'S A SMALL CHAMBER\nWITH PASSAGES NORTH,\nEAST, AND WEST.";
+    }
+    
+    // Then check L1[4] < 2 (no lamp yet)
+    if (L1[4] < 2) {
+        L2[0] = Math.min(10, L2[0] + 2);
+        return "DARK ROOM\nTHIS ROOM IS PITCH\nBLACK. YOU HEAR\nDRIPPING WATER.\nYOU ARE LIKELY TO BE\nEATEN BY A GRUE.";
+    }
+    
+    // L1[4] >= 2 (lamp is lit)
+    return "DARK ROOM\nTHE LAMP ILLUMINATES\nTHE ROOM. PASSAGES\nLEAD NORTH, EAST,\nAND WEST.";
+},
+   options: function() {
+        if (L1[4] < 2) {
+            // First time: can search, WEST goes back, NORTH/EAST = grue death
+            if (L1[5] === 0) return ["SEARCH", "WEST", "NORTH", "EAST"];
+            // Already searched but not lit: WEST goes back, NORTH/EAST = grue death
+            return ["WEST", "NORTH", "EAST"];
+        } else {
+            // Lit: show options
+            if (F === 66) return ["NORTH", "EAST", "WEST", "???"];
+            return ["NORTH", "EAST", "WEST"];
         }
-
-        function readNotes() {
-            showMessage("FILE: NOTES.TXT\n\nTHE FUNNY NUMBER IS THE KEY. IT CHANGES EVERY TIME. SMITH DOESN'T KNOW I FOUND THE BACKDOOR. ROOM 101 IS WAITING.");
-            if(!L1[12]) L1[12]=1;
-            changeLocation("desktop");
+    },
+    actions: function() {
+        if (L1[4] < 2) {
+            if (L1[5] === 0) {
+                return [() => searchDark(), () => goTo("building"), () => grueDeath(), () => grueDeath()];
+            }
+            return [() => goTo("building"), () => grueDeath(), () => grueDeath()];
+        } else {
+            if (F === 66) return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building"), () => goTo("mystery")];
+            return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building")];
         }
-
-        function checkInbox() {
-            showMessage("FROM: TECH OFFICE\nSUBJECT: NOTICE\n\nTHOMAS. STOP POKING AROUND. THE GRUE IS NECESSARY. IT KEEPS THE OTHERS IN LINE. YOUR ACCESS HAS BEEN LOGGED.\n- MR. SMITH\n\nP.S. ROOM 101 IS OFF LIMITS. DO NOT ATTEMPT TO ENTER.");
-            if(!L1[12]) L1[12]=1;
-            L1[16] = 1;
-            changeLocation("desktop");
+    }
+    },
+storage: {
+    name: "STORAGE ROOM",
+    desc: function() {
+        let base = "STORAGE ROOM\nOLD CRATES AND\nBARRELS FILL THIS\nROOM. SPIDERWEBS\nCOVER EVERYTHING.\nTHERE IS A SAFE WITH\nA 3-DIGIT LOCK.";
+        if (L2[0] >= 9) return Str1 + "\n\n" + base;
+        if (L2[0] >= 7) return Str3 + "\n\n" + base;
+        if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+        return base;
+    },
+    options: function() {
+        // If lamp isn't lit (L1[4] < 2), grue gets you
+        if (L1[4] < 2) {
+            return ["..."]; // No options, death incoming
         }
-
-        function escape() {
-            showMessage("YOU STEP THROUGH. THE SUN WARMS YOUR FACE. YOU ARE FREE.\n\n...OR ARE YOU?");
-            resetGame();
+        if (L1[6] === 1) return ["EAST", "SOUTH"];
+        return ["EAST", "SOUTH", "ENTER CODE"];
+    },
+    actions: function() {
+        if (L1[4] < 2) {
+            return [() => grueDeath()];
         }
-
-        function showMessage(msg) {
-            document.getElementById('description').innerHTML = msg.replace(/\n/g, "<br>");
-            document.getElementById('menu').innerHTML = '<button class="menu-btn" onclick="continueGame()">CONTINUE</button>';
+        if (L1[6] === 1) {
+            return [() => goTo("treasureVault"), () => goTo("darkRoom")];
         }
-
-        function continueGame() {
-            render();
+        return [() => goTo("treasureVault"), () => goTo("darkRoom"), () => openSafe()];
+    }
+},
+    treasureVault: {
+        name: "TREASURE VAULT",
+        desc: function() {
+            let base = "TREASURE VAULT\nA SMALL CHAMBER WITH\nA LARGE SAFE ON THE\nWALL.\nIT NEEDS A\n3-DIGIT CODE.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["WEST"],
+        actions: () => [() => goTo("storage")]
+    },
+    altar: {
+        name: "ALTAR OF SACRIFICE",
+        desc: function() {
+            let base = "";
+            if (L1[6] === 1) {
+                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A\nDARK PIT IN THE CENTER.\nIT CRAVES SOMETHING.\nTHE CRYSTAL KEY PULSES.";
+            } else {
+                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A\nDARK PIT IN THE CENTER.\nIT CRAVES SOMETHING.";
+            }
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: function() {
+            if (L1[6] === 1) return ["SACRIFICE KEY", "LEAVE"];
+            return ["LEAVE"];
+        },
+        actions: function() {
+            if (L1[6] === 1) {
+                return [() => sacrificeKey(), () => goTo("building")];
+            } else {
+                return [() => goTo("building")];
+            }
         }
-
-        function resetGame() {
-            currentLocation = "deadEnd";
-            L1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-            L2 = [0,0];
-            deathCount = 0;
-            fun = Math.floor(Math.random() * 100) + 1;
-            safeCode = Math.floor(Math.random() * 900) + 100;
-            attemptsRemaining = 5;
-            loginLocked = false;
-            render();
+    },
+    aquarium: {
+        name: "EMPTY AQUARIUM",
+        desc: function() {
+            let base = "EMPTY AQUARIUM\nENDLESS TANKS STRETCH\nINTO THE DARKNESS.\nNO WATER. NO FISH.\nJUST GLASS AND SILENCE.\nSOMETHING WATCHES.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["GO DEEPER", "EXAMINE TANK", "LISTEN"],
+        actions: () => [() => goDeeper(), () => examineTank(), () => listen()]
+    },
+    devRoom: {
+        name: "DEVELOPER ROOM",
+        desc: "WELCOME, TRAVELER!\n\nYOU FOUND THE SECRET\nROOM. HAVE SOME STUFF:\n\nA SIGN SAYS:\n'THE GRUE WAS HERE'\n'BEAR > ALL'\n'42 IS NOT THE ANSWER'\n'SEND MORE COFFEE'\n\nTHERE'S A CHEST WITH\nA NOTE INSIDE:\n'YOU'RE A TRUE\nEXPLORER. ENJOY\nTHIS SHINY PEPE COIN.'\n\nOH LOOK, A FREE\nCRYSTAL KEY! (BUT\nYOU PROBABLY ALREADY\nHAVE ONE...)",
+        options: () => ["EAST"],
+        actions: () => [() => { L1[6]=1; goTo("deadEnd"); }]
+    },
+    officeBuilding: {
+        name: "OFFICE BUILDING",
+        desc: function() {
+            let base = "OFFICE BUILDING\nCUBICLES STRETCH\nINTO INFINITY.\nA PRINTER HUMS.\nA COFFEE MACHINE\nBREWS ENDLESSLY.\nSOMETHING MOVES\nIN THE VENTS.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: () => ["EXAMINE CUBICLE", "GET COFFEE", "USE ELEVATOR", "GO STAIRS", "CHECK VENTS", "BOSS'S OFFICE"],
+        actions: () => [() => goTo("cubicle"), () => getCoffee(), () => useElevator(), () => goTo("deadEnd"), () => checkVents(), () => goTo("bossOffice")]
+    },
+    cubicle: {
+        name: "CUBICLE",
+        desc: function() {
+            let desc = "A CUBICLE WITH A\nDESK. A NOTE SAYS:\n'THE BEAR HAS YOUR\nRESERVATION.'";
+            if (L1[10] === 0) {
+                desc += "\nA CALCULATOR SITS\nON THE DESK.";
+            } else {
+                desc += "\nTHE DESK IS EMPTY.\nTHE CALCULATOR IS\nGONE.";
+            }
+            if (Math.random() < 1/7) {
+                desc += "\n\nA COWORKER GRABS YOU!\n'YOU'RE LATE FOR THE\nMEETING!' THEY DRAG\nYOU INTO A CONFERENCE\nROOM. YOU ARE NEVER\nSEEN AGAIN.";
+                return desc;
+            }
+            return desc;
+        },
+        options: function() {
+            if (L1[10] === 0) return ["TAKE CALC", "LEAVE"];
+            return ["LEAVE"];
+        },
+        actions: function() {
+            if (L1[10] === 0) {
+                return [() => { L1[10]=1; showMessage("YOU TAKE THE OFFICE\nCALCULATOR. IT HAS\nA STICKER: 'PROPERTY\nOF SMITH'"); goTo("cubicle"); }, () => goTo("officeBuilding")];
+            } else {
+                return [() => goTo("officeBuilding")];
+            }
         }
-
-        function render() {
-            const loc = locations[currentLocation];
-            if(!loc) return;
-
-            let name = loc.name;
-            let desc = typeof loc.desc === 'function' ? loc.desc() : loc.desc;
-            let opts = typeof loc.options === 'function' ? loc.options() : loc.options;
-            let acts = typeof loc.actions === 'function' ? loc.actions() : loc.actions;
-
-            document.getElementById('locationName').innerText = name;
-            document.getElementById('description').innerHTML = desc.replace(/\n/g, "<br>");
-            document.getElementById('status').innerHTML = `FUN: ${fun} | SANITY: ${L2[0]} | DEATHS: ${deathCount}`;
-            document.getElementById('debug').innerHTML = currentLocation.toUpperCase();
-
-            const menuDiv = document.getElementById('menu');
-            menuDiv.innerHTML = '';
-
-            opts.forEach((opt, i) => {
-                const btn = document.createElement('button');
-                btn.className = 'menu-btn';
-                btn.innerText = opt;
-                btn.onclick = acts[i];
-                menuDiv.appendChild(btn);
-            });
+    },
+    bossOffice: {
+        name: "BOSS'S OFFICE",
+        desc: function() {
+            if (L1[10] === 1) {
+                return "A SUIT BEHIND A DESK.\n'I SEE YOU TOOK THE\nCOMPANY CALCULATOR.'\nHE SMILES.\n'YOU'RE HIRED.'\n\nYOU NOW WORK HERE.\nFOREVER. IN THE\nINFINITE OFFICE.\nTHE GRUE IS YOUR\nCOWORKER.";
+            } else {
+                return "THE BOSS'S OFFICE\nA SUIT BEHIND A DESK.\n'YOU DON'T WORK HERE.'\nSECURITY ESCORTS YOU\nBACK TO THE CUBICLES.";
+            }
+        },
+        options: function() {
+            if (L1[10] === 1) return ["CONTEMPLATE"];
+            return ["LEAVE"];
+        },
+        actions: function() {
+            if (L1[10] === 1) {
+                return [() => { L2[1]++; saveGame(); resetGame(); }];
+            } else {
+                return [() => goTo("officeBuilding")];
+            }
         }
+    },
+    clearing: {
+        name: "CLEARING",
+        desc: function() {
+            if (L1[9] === 0) {
+                return "CLEARING\nA SMALL SUNNY\nCLEARING. YOU NOTICE\nA STRANGE SPINNING\nDEVICE IN THE CENTER.";
+            } else {
+                return "CLEARING\nA SMALL SUNNY\nCLEARING. THE SPINNER\nHAS GONE SILENT.\nA PATH LEADS NW.";
+            }
+        },
+        options: function() {
+            if (L1[9] === 0) return ["EXAMINE SPINNER", "GO NW"];
+            return ["GO NW"];
+        },
+        actions: function() {
+            if (L1[9] === 0) {
+                return [() => goTo("spinner"), () => goTo("seRoad")];
+            } else {
+                return [() => goTo("seRoad")];
+            }
+        }
+    },
+    spinner: {
+        name: "THE SPINNER",
+        desc: "A MYSTERIOUS MACHINE\nWITH A SPINNING ARROW.\nIT HUMS WITH ENERGY.",
+        options: () => ["SPIN THE WHEEL", "LEAVE"],
+        actions: () => [() => spinWheel(), () => goTo("clearing")]
+    },
+    smithOffice: {
+        name: "SMITH'S OFFICE",
+        desc: "HE POINTS TO A DOOR.\nBEYOND IT IS DAYLIGHT.",
+        options: () => ["LEAVE"],
+        actions: () => [() => goTo("escapeEnd")]
+    },
+    escapeEnd: {
+        name: "THE END",
+        desc: "YOU STEP THROUGH.\nTHE SUN WARMS YOUR FACE.\nYOU ARE FREE.\n\n...OR ARE YOU?",
+        options: () => ["RESTART"],
+        actions: () => [() => resetGame()]
+    }
+};
 
-        window.changeLocation = changeLocation;
-        window.continueGame = continueGame;
+// ===== TYPING EFFECT =====
+function typeText(text, callback) {
+    if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+    }
+    const descEl = document.getElementById('description');
+    let index = 0;
+    descEl.textContent = '';
+    
+    const sanity = L2[0];
+    let speed = 15;
+    if (sanity >= 8) speed = 6;
+    else if (sanity >= 6) speed = 10;
+    
+    // Save for ghost text
+    previousDescription = text;
+    document.getElementById('ghostText').textContent = text;
+    
+    typingInterval = setInterval(() => {
+        if (index < text.length) {
+            let char = text.charAt(index);
+            
+            // Text decay - random symbols at high sanity
+            if (sanity >= 7 && Math.random() < 0.04) {
+                char = String.fromCharCode(33 + Math.random() * 94);
+            }
+            // Skip character (text vanishes)
+            if (sanity >= 9 && Math.random() < 0.02) {
+                index++;
+                if (index < text.length) {
+                    char = text.charAt(index);
+                }
+            }
+            descEl.textContent += char;
+            index++;
+        } else {
+            clearInterval(typingInterval);
+            typingInterval = null;
+            if (callback) callback();
+        }
+    }, speed);
+}
 
-        // Easter eggs
-        console.log("%cDUNDETT WEB EDITION v1.3.5", "color:#3aff3a;font-family:monospace;font-size:16px;");
-        console.log("%cThe Grue is watching.", "color:#6aff6a;font-family:monospace;");
-        console.log("%cTIP: Try funny numbers like 42, 66, 67, 77", "color:#3a9a3a;font-family:monospace;");
-        window.grue = () => console.log("%c👁️ THE GRUE SEES YOU 👁️", "color:#ff3a3a;font-family:monospace;font-size:14px;");
+function setMenuHidden() {
+    const menuDiv = document.getElementById('menu');
+    menuDiv.classList.remove('visible');
+    menuDiv.classList.add('hidden');
+}
 
+function setMenuVisible() {
+    const menuDiv = document.getElementById('menu');
+    menuDiv.classList.remove('hidden');
+    menuDiv.classList.add('visible');
+}
+
+// ===== HELPER FUNCTIONS =====
+function goTo(location) {
+    currentLocation = location;
+    render();
+}
+
+function showMessage(msg, nextLocation = null) {
+    if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+    }
+    pendingLocation = nextLocation;
+    const menuDiv = document.getElementById('menu');
+    document.getElementById('locationName').textContent = "";
+    document.getElementById('description').textContent = msg;
+    setMenuHidden();
+    
+    if (nextLocation === null) {
+        // Death or message with no next location - go to main menu
+        menuDiv.innerHTML = '<button class="menu-btn" onclick="goToMainMenuAfterDeath()">CONTINUE</button>';
+    } else {
+        menuDiv.innerHTML = '<button class="menu-btn" onclick="continueGame()">CONTINUE</button>';
+    }
+    
+    requestAnimationFrame(() => {
+        setMenuVisible();
+        updateCorruption();
+    });
+}
+
+function goToMainMenuAfterDeath() {
+    L1 = new Array(25).fill(0);
+    Z = 1;
+    F = Math.floor(Math.random() * 100) + 1;
+    P = Math.floor(Math.random() * 900) + 100;
+    currentLocation = "mainMenu";
+    saveGame();
+    render();
+}
+
+function continueGame() {
+    if (pendingLocation) {
+        const next = pendingLocation;
+        pendingLocation = null;
+        goTo(next);
+    } else {
         render();
-    </script>
-</body>
+    }
+}
 
+function render() {
+    if (currentLocation === "mainMenu") {
+        showMainMenu();
+        return;
+    }
+    const loc = locations[currentLocation];
+    if (!loc) {
+        document.getElementById('locationName').textContent = "ERROR";
+        document.getElementById('description').textContent = "Location not found: " + currentLocation;
+        return;
+    }
+    
+    document.getElementById('locationName').textContent = loc.name;
+    let descText = typeof loc.desc === 'function' ? loc.desc() : loc.desc;
+    
+    // Apply glitch word replacement
+    descText = applyGlitchWords(descText);
+    
+    // Clear any existing typing interval
+    if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+    }
+    
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+    setMenuHidden();
+    
+    const opts = typeof loc.options === 'function' ? loc.options() : loc.options;
+    const acts = typeof loc.actions === 'function' ? loc.actions() : loc.actions;
+    
+    for (let i = 0; i < opts.length; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'menu-btn';
+        btn.textContent = opts[i];
+        btn.onclick = acts[i];
+        menuDiv.appendChild(btn);
+    }
+    
+    // Type the description, then fade in the buttons
+    typeText(descText, () => {
+        setMenuVisible();
+    });
+    
+    // Update corruption
+    updateCorruption();
+}
+
+// ===== GAME MECHANICS =====
+function feedBear() {
+    L1[1] = 1;
+    L1[2] = 1;
+    showMessage("YOU OFFER FOOD TO\nTHE BEAR. IT SNIFFS,\nTHEN GOBBLES IT DOWN.\nTHE BEAR IS GRATEFUL\nAND LEAVES SOMETHING\nBEHIND AS IT WANDERS\nOFF INTO THE FOREST.", "bearHangout");
+}
+
+function bearDeathAnnoyed() {
+    showMessage("THE BEAR IS ANNOYED.\nHE TELLS YOU SO BY\nTEARING YOUR HEAD\nOFF. YOU ARE DEAD.");
+    L2[1]++;
+    saveGame();
+}
+
+function bearDeathChase() {
+    showMessage("THE BEAR CHASES YOU.\nITS MASSIVE PAWS\nPOUND THE GROUND. IT\nCATCHES YOU EASILY.\nYOU ARE DEAD.");
+    L2[1]++;
+    saveGame();
+}
+
+function openBox() {
+    L1[3] = 1;
+    showMessage("YOU OPEN THE BOX.\nINSIDE IS A SHINY\nSILVER COIN AND A\nNOTE THAT READS:\n'TREASURE LIES EAST,\nBUT BEWARE THE DARK'", "kitchen");
+}
+
+function searchDark() {
+    L1[5] = 1;
+    L1[4] = 1;
+    showMessage("YOU FEEL AROUND AND\nFIND AN OIL LAMP.\nIT IS FULL OF OIL.\nYOU CAN LIGHT IT.", "darkRoom");
+}
+
+function grueDeath() {
+    showMessage("IN THE PITCH BLACK,\nYOU HEAR A SLITHERING\nSOUND. SUDDENLY, A\nGRUE DEVOURS YOU.\nYOU ARE DEAD.");
+    L2[1]++;
+    saveGame();
+}
+
+function openSafe() {
+    let code = prompt("ENTER 3 DIGITS:", "");
+    if (parseInt(code) === P) {
+        L1[6] = 1;
+        L1[11] = 0;
+        showMessage("THE SAFE CLICKS OPEN.\nINSIDE IS A GLEAMING\nCRYSTAL KEY.", "storage");
+    } else {
+        if (F === 77 && L1[11] === 1) {
+            L1[11] = 2;
+            showMessage("THE CODE IS WRONG, BUT\nTHE SAFE SEEMS\nLUCKY TODAY.\nTRY AGAIN?", "storage");
+        } else if (F === 77 && L1[11] === 0) {
+            L1[11] = 1;
+            showMessage("THE CODE IS WRONG, BUT\nTHE SAFE SEEMS\nLUCKY TODAY.\nTRY AGAIN?", "storage");
+        } else {
+            showMessage("WRONG CODE.\nA LOUD CLICK IS HEARD.\nTHE SAFE EXPLODES!\nSHARDS OF METAL FLY\nEVERYWHERE. YOU ARE\nKILLED INSTANTLY.");
+            L2[1]++;
+            saveGame();
+        }
+    }
+}
+
+function sacrificeKey() {
+    showMessage("YOU PLACE THE CRYSTAL\nKEY ON THE ALTAR.\nIT GLOWS... THEN...\nTHE ALTAR OPENS.\nA DOOR APPEARS.\nBEYOND IT IS AN AQUARIUM.", "aquarium");
+}
+
+function goDeeper() {
+    let d = Math.floor(Math.random() * 8) + 1;
+    
+    if (d === 1) {
+        // T1: Grue sign
+        showMessage("A SINGLE TANK WITH\nA RUSTY SIGN: 'THE GRUE WAS HERE'", "aquarium");
+    } else if (d === 2) {
+        // T2: Mirror
+        showMessage("A TANK WITH A MIRROR\nYOU SEE YOURSELF.\nYOUR REFLECTION BLINKS.\nYOU DON'T.", "aquarium");
+        L2[0] = Math.min(10, L2[0] + 1);
+    } else if (d === 3) {
+        // T3: Note with FUN value
+        showMessage("A TANK WITH A NOTE:\n" + F, "aquarium");
+        L2[0] = Math.min(10, L2[0] + 1);
+    } else if (d === 4) {
+        // T4: Empty room door
+        showMessage("A TANK WITH A DOOR.\nIT OPENS TO EMPTY ROOM.\nJUST MORE TANKS.", "aquarium");
+    } else if (d === 5) {
+        // T5: Fish
+        showMessage("A TANK WITH A FISH.\nBUT THERE'S NO WATER.\nIT FLOATS IN AIR.", "aquarium");
+        L2[0] = Math.min(10, L2[0] + 1);
+        // In TI-BASIC, T5 shows "WATCH" and "LEAVE" - we simplified to just a message
+    } else if (d === 6) {
+        // T6: Ladder → storage room
+        showMessage("A TANK WITH A LADDER.\nIT GOES DOWN INTO\nTHE DARKNESS.", "storage");
+        L2[0] = Math.min(10, L2[0] + 1);
+    } else if (d === 7) {
+        // T7: Cracked glass - choice
+        pendingLocation = "aquarium";
+        const menuDiv = document.getElementById('menu');
+        document.getElementById('locationName').textContent = "";
+        document.getElementById('description').textContent = "A TANK WITH NOTHING.\nBUT THE GLASS IS CRACKED.\nBEYOND IT IS A LIGHT.";
+        setMenuHidden();
+        menuDiv.innerHTML = '';
+        
+        const btn1 = document.createElement('button');
+        btn1.className = 'menu-btn';
+        btn1.textContent = "REACH THROUGH";
+        btn1.onclick = function() {
+            showMessage("YOU REACH THROUGH...\n\nYOUR HAND TOUCHES\nSOMETHING COLD.\nA VOICE SAYS:\n'YOU FOUND ME.'", "smithOffice");
+            L2[0] = Math.min(10, L2[0] + 1);
+        };
+        menuDiv.appendChild(btn1);
+        
+        const btn2 = document.createElement('button');
+        btn2.className = 'menu-btn';
+        btn2.textContent = "LEAVE";
+        btn2.onclick = function() {
+            goTo("aquarium");
+        };
+        menuDiv.appendChild(btn2);
+        
+        requestAnimationFrame(() => {
+            setMenuVisible();
+            updateCorruption();
+        });
+        return;
+    } else if (d === 8) {
+        // SM: Direct to Smith's office
+        showMessage("SMITH'S OFFICE\nA MAN SITS AT A DESK.\nHE WEARS A SUIT.\n'I KNEW YOU'D COME.'\n\n'THE KEY WAS ALWAYS\nMEANT TO BE SACRIFICED.'\n'NOW YOU CAN LEAVE.'\n\nHE POINTS TO A DOOR.\nBEYOND IT IS DAYLIGHT.", "smithOffice");
+        L2[0] = Math.min(10, L2[0] + 3);
+    }
+}
+
+function examineTank() {
+    showMessage("YOU PRESS YOUR FACE\nAGAINST THE GLASS.\nCOLD. EMPTY.\nSOMETHING PRESSES BACK.", "aquarium");
+}
+
+function listen() {
+    showMessage("SILENCE.\nJUST THE HUM OF\nFLUORESCENT LIGHTS.\nA DRIP. SOMEWHERE.\nBUT THERE'S NO WATER.", "aquarium");
+}
+
+function mysteryRoom() {
+    if (F === 66 && L1[8] === 0) {
+        L1[8] = 1;
+        showMessage("................\n................\n..WHO ARE YOU?..\n................\n................\n\nA VOICE ECHOES:\n666", "darkRoom");
+    }
+}
+
+function getCoffee() {
+    let r = Math.floor(Math.random() * 4) + 1;
+    if (r === 1) {
+        showMessage("THE COFFEE BURNS\nYOUR THROAT. IT WAS\nNOT COFFEE. IT WAS\nLIQUID GRUE. YOU\nDISSOLVE FROM WITHIN.");
+        L2[1]++;
+        saveGame();
+    } else {
+        L2[0] = Math.max(0, L2[0] - 1);
+        showMessage("YOU DRINK. IT'S AWFUL.\nBUT YOU FEEL... CLEARER.", "officeBuilding");
+    }
+}
+
+function useElevator() {
+    let l = Math.floor(Math.random() * 6) + 1;
+    let locs = ["deadEnd", "bearHangout", "kitchen", "officeBuilding", "deadEnd", "fork"];
+    if (l === 5) {
+        showMessage("THE ELEVATOR CABLES\nSNAP! YOU PLUMMET\nDOWN THE SHAFT.\nYOU LAND WITH A\nTERRIBLE CRUNCH.");
+        L2[1]++;
+        saveGame();
+    } else {
+        showMessage("THE ELEVATOR DOORS\nOPEN. INSIDE,\nA BEAR IN A SUIT.\n'GOING DOWN?'", locs[l-1]);
+    }
+}
+
+function checkVents() {
+    showMessage("YOU OPEN THE VENT.\nEYES GLOW INSIDE.\nA GRUE POUNCES!\n'FINALLY, DELIVERY!'\nIT CHOMPS HAPPILY.");
+    L2[1]++;
+    saveGame();
+}
+
+function spinWheel() {
+    if (L1[9] === 1) {
+        showMessage("THE SPINNER IS SILENT.\nIT HAS ALREADY BEEN USED.", "clearing");
+        return;
+    }
+    L1[9] = 1;
+    let dest = Math.floor(Math.random() * 10) + 1;
+    let locs = ["deadEnd", "dirtRoad", "fork", "seRoad", "bearHangout", "neRoad", "building", "storage", "clearing", "darkRoom"];
+    showMessage("THE ARROW SPINS...\n...AND LANDS ON:\n" + locs[dest-1].toUpperCase() + "\n\nYOU FEEL PULLED...", locs[dest-1]);
+}
+
+function resetGame() {
+    L1 = new Array(25).fill(0);
+    Z = 1;
+    F = Math.floor(Math.random() * 100) + 1;
+    P = Math.floor(Math.random() * 900) + 100;
+    currentLocation = "mainMenu";
+    saveGame();
+    render();
+}
+
+// ===== EASTER EGGS =====
+console.log("%cDUNDETT WEB EDITION v1.3.5", "color:#3aff3a;font-family:monospace;font-size:16px;");
+console.log("%cThe Grue is watching.", "color:#6aff6a;font-family:monospace;");
+window.grue = () => console.log("%c👁️ THE GRUE SEES YOU 👁️", "color:#ff3a3a;font-family:monospace;font-size:14px;");
+window.dundett = () => console.log("%cType 'grue()' if you are brave.", "color:#6aff6a;font-family:monospace;");
+
+// ===== START =====
+showMainMenu();
+</script>
+</body>
 </html>
