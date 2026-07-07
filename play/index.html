@@ -17,6 +17,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow: hidden;
         }
         .scanlines {
             position: fixed;
@@ -121,6 +122,8 @@
             min-height: 80px;
             z-index: 2;
         }
+        .description.text-size-small { font-size: 11px; }
+        .description.text-size-large { font-size: 15px; }
         .menu { display: flex; flex-direction: column; gap: 6px; opacity: 1; transition: opacity 0.24s ease-in; z-index: 2; position: relative; }
         .menu.hidden { opacity: 0; pointer-events: none; }
         .menu.visible { opacity: 1; pointer-events: auto; }
@@ -166,6 +169,14 @@
             z-index: 2;
             position: relative;
             transition: all 0.3s ease;
+        }
+        .settings-note {
+            font-size: 10px;
+            line-height: 1.5;
+            color: #4a6a4a;
+            margin-bottom: 12px;
+            text-align: center;
+            opacity: 0.85;
         }
         @media (max-width: 600px) {
             .game-container { padding: 14px; }
@@ -221,7 +232,10 @@
 
         @keyframes screenShake {
             0% { transform: translate(0, 0); }
-            100% { transform: translate(1px, -1px); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, 2px); }
+            100% { transform: translate(-2px, -2px); }
         }
 
         @keyframes tear {
@@ -332,6 +346,32 @@ function saveGame() {
     } catch(e) {}
 }
 
+function loadSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('dundett_settings'));
+        if (saved) {
+            return {
+                typingSpeed: saved.typingSpeed || 'normal',
+                typingAnimation: saved.typingAnimation !== false,
+                glitchEffects: saved.glitchEffects !== false,
+                textSize: saved.textSize || 'normal'
+            };
+        }
+    } catch(e) {}
+    return {
+        typingSpeed: 'normal',
+        typingAnimation: true,
+        glitchEffects: true,
+        textSize: 'normal'
+    };
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem('dundett_settings', JSON.stringify(settings));
+    } catch(e) {}
+}
+
 // ===== GAME STATE =====
 let L1 = new Array(25).fill(0);
 let L2 = [0, 0];
@@ -343,6 +383,8 @@ let typingInterval = null;
 let pendingLocation = null;
 let previousDescription = "";
 let ghostTextInterval = null;
+let sanityDecreaseInterval = null;
+let settings = loadSettings();
 
 const Str1 = "YOU HEAR BREATHING.";
 const Str2 = "THE GRUE IS CLOSE.";
@@ -366,7 +408,7 @@ const glitchWords = {
 };
 
 function applyGlitchWords(text) {
-    if (L2[0] < 7) return text;
+    if (!settings.glitchEffects || L2[0] < 7) return text;
     const words = Object.keys(glitchWords);
     const glitchChance = Math.min(0.3, (L2[0] - 6) * 0.05);
     return text.split(' ').map(word => {
@@ -400,15 +442,80 @@ function showMainMenu() {
     menuDiv.appendChild(btn2);
     const btn3 = document.createElement('button');
     btn3.className = 'menu-btn';
-    btn3.textContent = "CHANGELOG";
-    btn3.onclick = () => { showChangelog(); };
+    btn3.textContent = "SETTINGS";
+    btn3.onclick = () => { showSettings(); };
     menuDiv.appendChild(btn3);
     const btn4 = document.createElement('button');
     btn4.className = 'menu-btn';
-    btn4.textContent = "QUIT";
-    btn4.onclick = () => { showQuit(); };
+    btn4.textContent = "CHANGELOG";
+    btn4.onclick = () => { showChangelog(); };
     menuDiv.appendChild(btn4);
+    const btn5 = document.createElement('button');
+    btn5.className = 'menu-btn';
+    btn5.textContent = "QUIT";
+    btn5.onclick = () => { showQuit(); };
+    menuDiv.appendChild(btn5);
     updateCorruption();
+}
+
+function showSettings() {
+    document.getElementById('locationName').textContent = "SETTINGS";
+    document.getElementById('description').textContent = "ADJUST THE TRANSMISSION.\nTYPING SPEED CHANGES HOW FAST\nTEXT APPEARS.\nANIMATIONS CAN BE DISABLED\nFOR A CLEANER READ.";
+    const menuDiv = document.getElementById('menu');
+    menuDiv.innerHTML = '';
+
+    const speedBtn = document.createElement('button');
+    speedBtn.className = 'menu-btn';
+    speedBtn.textContent = `TYPING SPEED: ${settings.typingSpeed.toUpperCase()}`;
+    speedBtn.onclick = () => {
+        const cycle = ['slow', 'normal', 'fast'];
+        const current = settings.typingSpeed;
+        settings.typingSpeed = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+        saveSettings();
+        showSettings();
+    };
+    menuDiv.appendChild(speedBtn);
+
+    const animBtn = document.createElement('button');
+    animBtn.className = 'menu-btn';
+    animBtn.textContent = `TYPING ANIMATION: ${settings.typingAnimation ? 'ON' : 'OFF'}`;
+    animBtn.onclick = () => {
+        settings.typingAnimation = !settings.typingAnimation;
+        saveSettings();
+        showSettings();
+    };
+    menuDiv.appendChild(animBtn);
+
+    const sizeBtn = document.createElement('button');
+    sizeBtn.className = 'menu-btn';
+    sizeBtn.textContent = `TEXT SIZE: ${settings.textSize.toUpperCase()}`;
+    sizeBtn.onclick = () => {
+        const cycle = ['small', 'normal', 'large'];
+        const current = settings.textSize;
+        settings.textSize = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+        saveSettings();
+        applyTextSize();
+        showSettings();
+    };
+    menuDiv.appendChild(sizeBtn);
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'menu-btn';
+    backBtn.textContent = "BACK";
+    backBtn.onclick = () => { showMainMenu(); };
+    menuDiv.appendChild(backBtn);
+    updateCorruption();
+}
+
+function applyTextSize() {
+    const descEl = document.getElementById('description');
+    if (!descEl) return;
+    descEl.classList.remove('text-size-small', 'text-size-large');
+    if (settings.textSize === 'small') {
+        descEl.classList.add('text-size-small');
+    } else if (settings.textSize === 'large') {
+        descEl.classList.add('text-size-large');
+    }
 }
 
 function showHelp() {
@@ -429,16 +536,21 @@ function showHelp() {
     menuDiv.appendChild(btn2);
     const btn3 = document.createElement('button');
     btn3.className = 'menu-btn';
-    btn3.textContent = "QUIT";
-    btn3.onclick = () => { showQuit(); };
+    btn3.textContent = "SETTINGS";
+    btn3.onclick = () => { showSettings(); };
     menuDiv.appendChild(btn3);
+    const btn4 = document.createElement('button');
+    btn4.className = 'menu-btn';
+    btn4.textContent = "QUIT";
+    btn4.onclick = () => { showQuit(); };
+    menuDiv.appendChild(btn4);
     updateCorruption();
 }
 
 function showChangelog() {
     document.getElementById('locationName').textContent = "CHANGELOG";
     document.getElementById('description').textContent = 
-        "v1.3.5\n- FIXED SAFE ISSUES\n- EXPANDED THE SCHOOL\n- MORE LORE?\n- FIXED SOME FLASHING";
+        "v1.3.5\n- IMPLEMENTED WEB VERSION (FINALLY)\n- EXPANDED THE SCHOOL\n- MORE LORE?\n- ADDED SETTINGS MENU";
     const menuDiv = document.getElementById('menu');
     menuDiv.innerHTML = '';
     const btn = document.createElement('button');
@@ -514,22 +626,71 @@ function updateCorruption() {
     
     body.classList.remove('corrupted', 'corrupted-high');
     
+    const nameEl = document.getElementById('locationName');
+    const screen = document.querySelector('.screen');
+    
+    // Gradual effects based on sanity level
     if (sanity >= 8) {
+        // Extreme corruption - intense red glitch
         body.classList.add('corrupted', 'corrupted-high');
-        document.getElementById('locationName').style.textShadow = '0 0 30px rgba(255,0,0,0.3), 0 0 60px rgba(255,0,0,0.1)';
-        const screen = document.querySelector('.screen');
-        if (screen) screen.style.borderColor = '#3a1a1a';
-        body.style.filter = 'brightness(0.85) contrast(1.2)';
-    } else if (sanity >= 5) {
+        nameEl.style.textShadow = '0 0 30px rgba(255,0,0,0.3), 0 0 60px rgba(255,0,0,0.1)';
+        if (screen) {
+            screen.style.borderColor = '#3a1a1a';
+            screen.style.transition = 'none';
+        }
+        body.style.filter = 'brightness(0.85) contrast(1.2) hue-rotate(-15deg) saturate(1.3)';
+    } else if (sanity >= 6) {
+        // Heavy corruption - orange/red tint, noticeable shake
         body.classList.add('corrupted');
-        document.getElementById('locationName').style.textShadow = '0 0 20px rgba(255,100,0,0.2)';
-        const screen = document.querySelector('.screen');
-        if (screen) screen.style.borderColor = '#2a2a1a';
-        body.style.filter = 'brightness(0.95) contrast(1.1)';
+        nameEl.style.textShadow = '0 0 25px rgba(255,80,0,0.25)';
+        if (screen) {
+            screen.style.borderColor = '#2a2410';
+            screen.style.transition = 'none';
+        }
+        const brightness = 0.93 + (sanity - 6) * 0.02;
+        const contrast = 1.08 + (sanity - 6) * 0.02;
+        const saturation = 1.05 + (sanity - 6) * 0.05;
+        body.style.filter = `brightness(${brightness}) contrast(${contrast}) hue-rotate(-8deg) saturate(${saturation})`;
+    } else if (sanity >= 5) {
+        // Moderate corruption - orange tint begins, slight animation
+        body.classList.add('corrupted');
+        nameEl.style.textShadow = '0 0 20px rgba(255,100,0,0.2)';
+        if (screen) {
+            screen.style.borderColor = '#2a2a1a';
+            screen.style.transition = 'none';
+        }
+        body.style.filter = 'brightness(0.97) contrast(1.05) hue-rotate(-5deg) saturate(1.02)';
+    } else if (sanity >= 3) {
+        // Noticeable changes - significant desaturation and color shift
+        // Smooth transition out of shake animation
+        nameEl.style.textShadow = '0 0 20px rgba(58,255,58,0.12)';
+        if (screen) {
+            screen.style.borderColor = '#1a3a1a';
+            screen.style.transition = 'transform 1.2s ease-out';
+            screen.style.transform = 'none';
+        }
+        const saturation = 1 - (sanity - 3) * 0.15;
+        const hueShift = (sanity - 3) * -4;
+        body.style.filter = `brightness(0.99) saturate(${saturation}) hue-rotate(${hueShift}deg)`;
+    } else if (sanity >= 1) {
+        // Visible desaturation and hue shift begins
+        nameEl.style.textShadow = '0 0 20px rgba(58,255,58,0.14)';
+        if (screen) {
+            screen.style.borderColor = '#1a3a1a';
+            screen.style.transition = 'transform 1.2s ease-out';
+            screen.style.transform = 'none';
+        }
+        const saturation = 1 - sanity * 0.12;
+        const hueShift = sanity * -3;
+        body.style.filter = `saturate(${saturation}) hue-rotate(${hueShift}deg)`;
     } else {
-        document.getElementById('locationName').style.textShadow = '0 0 20px rgba(58,255,58,0.15)';
-        const screen = document.querySelector('.screen');
-        if (screen) screen.style.borderColor = '#1a3a1a';
+        // No corruption
+        nameEl.style.textShadow = '0 0 20px rgba(58,255,58,0.15)';
+        if (screen) {
+            screen.style.borderColor = '#1a3a1a';
+            screen.style.transition = 'transform 1.2s ease-out';
+            screen.style.transform = 'none';
+        }
         body.style.filter = 'none';
     }
     
@@ -543,8 +704,220 @@ function updateCorruption() {
         }, 2000);
     }
 }
-
-// ===== LOCATION DATA =====
+function dramaticEscape() {
+    const nameEl = document.getElementById('locationName');
+    const descEl = document.getElementById('description');
+    const menuDiv = document.getElementById('menu');
+    const screen = document.querySelector('.screen');
+    
+    // Hide menu and clear screen
+    menuDiv.innerHTML = '';
+    setMenuHidden();
+    nameEl.textContent = "";
+    descEl.textContent = "";
+    
+    // Create full-page overlay for effects
+    const fullOverlay = document.createElement('div');
+    fullOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9998;
+        pointer-events: none;
+        background: transparent;
+    `;
+    document.body.appendChild(fullOverlay);
+    
+    // Phase 1: The freedom moment — intense, rising
+    descEl.style.textAlign = 'center';
+    descEl.style.fontSize = '24px';
+    descEl.style.color = '#3aff3a';
+    descEl.style.opacity = '0';
+    descEl.style.transition = 'opacity 1.2s ease';
+    descEl.style.letterSpacing = '2px';
+    descEl.style.fontWeight = 'bold';
+    descEl.textContent = "YOU STEP THROUGH.";
+    
+    setTimeout(() => {
+        descEl.style.opacity = '1';
+    }, 100);
+    
+    // Phase 1b: More text arrives
+    setTimeout(() => {
+        descEl.style.transition = 'none';
+        descEl.textContent = "YOU STEP THROUGH.\n\nTHE SUN WARMS YOUR FACE.";
+    }, 1400);
+    
+    setTimeout(() => {
+        descEl.style.transition = 'opacity 0.5s ease';
+        descEl.style.opacity = '0';
+    }, 1900);
+    
+    setTimeout(() => {
+        descEl.style.transition = 'none';
+        descEl.style.opacity = '1';
+        descEl.textContent = "YOU STEP THROUGH.\n\nTHE SUN WARMS YOUR FACE.\n\nYOU ARE FREE.";
+        descEl.style.fontSize = '28px';
+        descEl.style.color = '#ffffff';
+        descEl.style.textShadow = '0 0 40px rgba(255,255,255,0.5), 0 0 80px rgba(58,255,58,0.3)';
+    }, 2100);
+    
+    // Phase 2: Reality begins to glitch (3.2s mark)
+    setTimeout(() => {
+        // Intense glitch effects
+        const glitchOverlay = document.createElement('div');
+        glitchOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9997;
+            pointer-events: none;
+        `;
+        document.body.appendChild(glitchOverlay);
+        
+        // Rapid red/white flashes
+        let flashCount = 0;
+        const rapidFlash = setInterval(() => {
+            flashCount++;
+            const colors = ['#ff0000', '#ffffff', '#ff0000', '#3aff3a', '#ffffff'];
+            glitchOverlay.style.background = colors[flashCount % colors.length];
+            glitchOverlay.style.opacity = '0.5';
+            
+            if (flashCount > 14) {
+                clearInterval(rapidFlash);
+                glitchOverlay.style.opacity = '0';
+            }
+        }, 70);
+        
+        // Screen shake
+        screen.style.transition = 'none';
+        for (let i = 0; i < 12; i++) {
+            setTimeout(() => {
+                const x = (Math.random() - 0.5) * 30;
+                const y = (Math.random() - 0.5) * 30;
+                screen.style.transform = `translate(${x}px, ${y}px) scale(${1 + Math.random() * 0.03})`;
+            }, i * 50);
+        }
+        
+        // Glitch the text randomly
+        const glitchChars = setInterval(() => {
+            const glitched = "YOU ST̸̡E̶̝P̶̣ ̴T̵H̵R̶O̵UG̴H.\n\nTHE S̸U̵N̴ ̶W̶ARMS̵ Y̶OUR̴ ̶F̴ACE.\n\nYOU A̸R̴E̶ FREE̸.";
+            if (Math.random() > 0.5) {
+                descEl.textContent = glitched;
+            } else {
+                descEl.textContent = "YOU STEP THROUGH.\n\nTHE SUN WARMS YOUR FACE.\n\nYOU ARE FREE.";
+            }
+        }, 90);
+        
+        setTimeout(() => {
+            clearInterval(glitchChars);
+            glitchOverlay.remove();
+            screen.style.transform = 'translate(0, 0) scale(1)';
+        }, 1200);
+    }, 3200);
+    
+    // Phase 3: The descent into chaos (4.6s mark)
+    setTimeout(() => {
+        descEl.style.transition = 'all 0.8s ease';
+        descEl.style.opacity = '0';
+        descEl.style.transform = 'scale(0.3)';
+        descEl.style.color = '#000000';
+        descEl.textContent = "...OR ARE YOU?";
+        document.body.style.filter = 'brightness(2) contrast(2)';
+    }, 4600);
+    
+    // Phase 4: The revelation (5.8s mark)
+    setTimeout(() => {
+        descEl.style.transition = 'none';
+        descEl.style.opacity = '1';
+        descEl.style.transform = 'scale(1) rotate(0deg)';
+        descEl.style.fontSize = '56px';
+        descEl.style.fontWeight = '900';
+        descEl.style.letterSpacing = '15px';
+        descEl.style.color = '#ff0000';
+        descEl.style.textShadow = '0 0 60px rgba(255,0,0,0.8), 0 0 120px rgba(255,0,0,0.4), -3px -3px 0 #000000, 3px 3px 0 #ffffff';
+        descEl.textContent = "OR ARE YOU?";
+        nameEl.textContent = "✦";
+        nameEl.style.fontSize = '72px';
+        nameEl.style.color = '#ff0000';
+        nameEl.style.textShadow = '0 0 80px rgba(255,0,0,0.6)';
+        
+        // Intense screen shake
+        screen.style.transition = 'none';
+        const shakeInt = setInterval(() => {
+            const x = (Math.random() - 0.5) * 40;
+            const y = (Math.random() - 0.5) * 40;
+            screen.style.transform = `translate(${x}px, ${y}px) rotate(${(Math.random() - 0.5) * 3}deg) scale(${1 + (Math.random() - 0.5) * 0.08})`;
+        }, 25);
+        
+        setTimeout(() => {
+            clearInterval(shakeInt);
+            screen.style.transform = 'translate(0, 0) scale(1)';
+        }, 2000);
+    }, 5800);
+    
+    // Phase 5: White flash intensifies (7.9s mark)
+    setTimeout(() => {
+        fullOverlay.style.background = '#ffffff';
+        fullOverlay.style.opacity = '0';
+        fullOverlay.style.transition = 'opacity 1.5s ease-in';
+        setTimeout(() => {
+            fullOverlay.style.opacity = '0.7';
+        }, 50);
+    }, 7900);
+    
+    // Phase 6: The final fade to white (9.6s mark)
+    setTimeout(() => {
+        descEl.style.transition = 'all 2s ease';
+        descEl.style.opacity = '0';
+        nameEl.style.transition = 'all 2s ease';
+        nameEl.style.opacity = '0';
+        document.body.style.transition = 'filter 2s ease';
+        document.body.style.filter = 'brightness(0) contrast(0)';
+        fullOverlay.style.transition = 'opacity 2.5s ease';
+        fullOverlay.style.opacity = '1';
+    }, 9600);
+    
+    // Phase 7: Reset and move to suburbs (13s mark)
+    setTimeout(() => {
+        // RESET EVERYTHING PROPERLY
+        descEl.style.textAlign = 'left';
+        descEl.style.fontSize = '13px';
+        descEl.style.fontWeight = 'normal';
+        descEl.style.letterSpacing = '0';
+        descEl.style.opacity = '1';
+        descEl.style.transition = 'none';
+        descEl.style.color = '#6aff6a';
+        descEl.style.textShadow = 'none';
+        descEl.style.transform = 'none';
+        descEl.textContent = "";
+        nameEl.textContent = "";
+        nameEl.style.color = '#3aff3a';
+        nameEl.style.fontSize = '20px';
+        nameEl.style.textShadow = '0 0 20px rgba(58,255,58,0.15)';
+        nameEl.style.opacity = '1';
+        nameEl.style.transition = 'none';
+        document.body.style.filter = 'none';
+        document.body.style.transition = 'none';
+        screen.style.transform = 'none';
+        screen.style.transition = 'none';
+        fullOverlay.style.opacity = '0';
+        fullOverlay.style.transition = 'none';
+        
+        // Remove any inline styles that might persist
+        descEl.removeAttribute('style');
+        nameEl.removeAttribute('style');
+        screen.removeAttribute('style');
+        fullOverlay.remove();
+        
+        setMenuVisible();
+        goToSuburbs();
+    }, 13000);
+}
 const locations = {
     deadEnd: {
         name: "DEAD END",
@@ -552,10 +925,10 @@ const locations = {
             let baseDesc = "";
             if (L2[1] > 0) {
                 if (F === 67) baseDesc = "DEAD END\nYOU ARE AT A DEAD END\n...OR ARE YOU?";
-                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END\nOF A DIRT ROAD. THE\nROAD GOES EAST. IN\nTHE DISTANCE YOU CAN\nSEE IT WILL FORK.\nTHE PALMS ARE STILL.\nTOO STILL.";
+                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END OF A DIRT ROAD. THE ROAD GOES EAST. IN THE DISTANCE YOU CAN SEE IT WILL FORK. THE PALMS ARE STILL. TOO STILL.";
             } else {
                 if (F === 67) baseDesc = "DEAD END\n...OR ARE YOU?";
-                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END\nOF A DIRT ROAD. THE\nROAD GOES EAST. IN\nTHE DISTANCE YOU CAN\nSEE IT WILL FORK.\nTALL ROYAL PALMS ARE\nSPACED EQUIDISTANTLY.";
+                else baseDesc = "DEAD END\nYOU ARE AT A DEAD END OF A DIRT ROAD. THE ROAD GOES EAST. IN THE DISTANCE YOU CAN SEE IT WILL FORK. TALL ROYAL PALMS ARE SPACED EQUIDISTANTLY.";
             }
             
             if (L2[0] >= 5 && Math.random() < 0.33) {
@@ -577,7 +950,7 @@ const locations = {
     dirtRoad: {
         name: "E/W DIRT ROAD",
         desc: function() {
-            let base = "E/W DIRT ROAD\nYOU ARE ON A DIRT\nROAD. TREES LINE\nBOTH SIDES. THE ROAD\nCONTINUES EAST AND\nWEST. THERE IS A\nLARGE BOULDER HERE.\nIT CANNOT BE MOVED.";
+            let base = "E/W DIRT ROAD\nYOU ARE ON A DIRT ROAD. TREES LINE BOTH SIDES. THE ROAD CONTINUES EAST AND WEST. THERE IS A LARGE BOULDER HERE. IT CANNOT BE MOVED.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -589,7 +962,7 @@ const locations = {
     fork: {
         name: "FORK",
         desc: function() {
-            let base = "FORK\nYOU ARE AT A FORK.\nPASSAGES LEAD NE AND\nSE. YOU CAN ALSO GO\nBACK WEST.";
+            let base = "FORK\nYOU ARE AT A FORK. PASSAGES LEAD NE AND SE. YOU CAN ALSO GO BACK WEST.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -601,7 +974,7 @@ const locations = {
     seRoad: {
         name: "SE/NW ROAD",
         desc: function() {
-            let base = "SE/NW ROAD\nYOU ARE ON A SE/NW\nROAD. THE PATH WINDS\nTHROUGH DENSE FOREST.\nTHE AIR GROWS COLDER\nAS YOU GO SOUTHEAST.";
+            let base = "SE/NW ROAD\nYOU ARE ON A SE/NW ROAD. THE PATH WINDS THROUGH DENSE FOREST. THE AIR GROWS COLDER AS YOU GO SOUTHEAST.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -615,16 +988,16 @@ const locations = {
         desc: function() {
             let base = "";
             if (L1[2] === 0) {
-                base = "BEAR HANGOUT\nYOU ARE AT THE END\nOF THE ROAD. A\nPASSAGE LEADS NW.\nA FEROCIOUS BEAR IS\nHERE! HE IS A BEAUTY,\nWITH THICK BROWN FUR\nAND SHARP CLAWS. HE\nWATCHES YOU.";
-            } else {
-                base = "BEAR HANGOUT\nTHE BEAR IS GONE.\nTHE AREA IS PEACEFUL.\nA PASSAGE LEADS NW.\nA FAINT PATH GOES SE.";
-                if (L2[1] > 0 && L1[2] === 1) {
-                    base += "\nTHE BEAR NODS.\nIT REMEMBERS YOU.";
+                base = "BEAR HANGOUT\nYOU ARE AT THE END OF THE ROAD. A PASSAGE LEADS NW. A FEROCIOUS BEAR IS HERE! HE IS A BEAUTY, WITH THICK BROWN FUR AND SHARP CLAWS. HE WATCHES YOU.";
+                if (L2[1] > 0) {
+                    base += "\nTHE BEAR NODS. IT REMEMBERS YOU.";
                 }
                 if (F > 80 && Math.random() < 0.1) {
                     L2[0] = Math.min(10, L2[0] + 1);
-                    base += "\nTHE BEAR WHISPERS:\n'...FUNNY NUMBER...'";
+                    base += "\nTHE BEAR WHISPERS: '...FUNNY NUMBER...'";
                 }
+            } else {
+                base = "BEAR HANGOUT\nTHE BEAR IS GONE. THE AREA IS PEACEFUL. A PASSAGE LEADS NW. A FAINT PATH GOES SE.";
             }
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
@@ -646,7 +1019,7 @@ const locations = {
     neRoad: {
         name: "NE/SW ROAD",
         desc: function() {
-            let base = "NE/SW ROAD\nYOU ARE ON A NE/SW\nROAD. THE PATH IS\nWELL-WORN, SUGGESTING\nTRAVELERS PASS OFTEN.";
+            let base = "NE/SW ROAD\nYOU ARE ON A NE/SW ROAD. THE PATH IS WELL-WORN, SUGGESTING TRAVELERS PASS OFTEN.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -660,9 +1033,9 @@ const locations = {
         desc: function() {
             let base = "";
             if (L1[1] === 0) {
-                base = "BUILDING ENTRANCE\nYOU ARE AT THE END\nOF THE ROAD. A STURDY\nWOODEN BUILDING\nSTANDS TO THE NE.\nTHE DOOR IS LOCKED.\nYOU NEED A KEY.";
+                base = "BUILDING ENTRANCE\nYOU ARE AT THE END OF THE ROAD. A STURDY WOODEN BUILDING STANDS TO THE NE. THE DOOR IS LOCKED. YOU NEED A KEY.";
             } else {
-                base = "BUILDING ENTRANCE\nYOU USE THE KEY. THE\nDOOR CREAKS OPEN.\nYOU ENTER A MUSTY HALLWAY.\nPASSAGES LEAD NORTH, EAST, AND WEST.";
+                base = "BUILDING ENTRANCE\nYOU USE THE KEY. THE DOOR CREAKS OPEN. YOU ENTER A MUSTY HALLWAY. PASSAGES LEAD NORTH, EAST, AND WEST.";
             }
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
@@ -684,14 +1057,14 @@ const locations = {
     kitchen: {
         name: "KITCHEN",
         desc: function() {
-            let desc = "KITCHEN\nAN OLD KITCHEN WITH\nA DUSTY HEARTH. RUSTY\nPOTS HANG ON THE WALL.";
+            let desc = "KITCHEN\nAN OLD KITCHEN WITH A DUSTY HEARTH. RUSTY POTS HANG ON THE WALL.";
             if (L1[7] === 0) {
-                desc += "\nA SMALL BOX SITS ON\nTHE COUNTER.\nNUMBERS ON THE WALL:\n" + P;
+                desc += "\nA SMALL BOX SITS ON THE COUNTER. NUMBERS ON THE WALL: " + P;
                 L1[7] = 1;
             } else {
-                desc += "\nA SMALL BOX SITS ON\nTHE COUNTER.\nTHE NUMBERS HAVE\nFADED AWAY.";
+                desc += "\nA SMALL BOX SITS ON THE COUNTER. THE NUMBERS HAVE FADED AWAY.";
                 if (F === 42) {
-                    desc += "\n\nTHE ANSWER IS 42.\nBUT WHAT WAS THE\nQUESTION?";
+                    desc += "\n\nTHE ANSWER IS 42. BUT WHAT WAS THE QUESTION?";
                 }
                 if (L2[1] > 0) {
                     desc += "\nTHE NUMBERS FLICKER.";
@@ -716,82 +1089,80 @@ const locations = {
     },
     darkRoom: {
         name: "DARK ROOM",
-desc: function() {
-    if (L2[0] >= 9) return Str1;
-    if (L2[0] >= 7) return Str3;
-    if (L2[0] >= 5 && Math.random() < 0.33) return Str4;
-    
-    // Check L1[4] === 1 first (lamp found, needs lighting)
-    if (L1[4] === 1) {
-        L1[4] = 2;
-        L2[0] = Math.max(0, L2[0] - 1);
-        return "DARK ROOM\nYOU LIGHT THE LAMP.\nTHE ROOM IS REVEALED.\nIT'S A SMALL CHAMBER\nWITH PASSAGES NORTH,\nEAST, AND WEST.";
-    }
-    
-    // Then check L1[4] < 2 (no lamp yet)
-    if (L1[4] < 2) {
-        L2[0] = Math.min(10, L2[0] + 2);
-        return "DARK ROOM\nTHIS ROOM IS PITCH\nBLACK. YOU HEAR\nDRIPPING WATER.\nYOU ARE LIKELY TO BE\nEATEN BY A GRUE.";
-    }
-    
-    // L1[4] >= 2 (lamp is lit)
-    return "DARK ROOM\nTHE LAMP ILLUMINATES\nTHE ROOM. PASSAGES\nLEAD NORTH, EAST,\nAND WEST.";
-},
-   options: function() {
-        if (L1[4] < 2) {
-            // First time: can search, WEST goes back, NORTH/EAST = grue death
-            if (L1[5] === 0) return ["SEARCH", "WEST", "NORTH", "EAST"];
-            // Already searched but not lit: WEST goes back, NORTH/EAST = grue death
-            return ["WEST", "NORTH", "EAST"];
-        } else {
-            // Lit: show options
-            if (F === 66) return ["NORTH", "EAST", "WEST", "???"];
-            return ["NORTH", "EAST", "WEST"];
-        }
-    },
-    actions: function() {
-        if (L1[4] < 2) {
-            if (L1[5] === 0) {
-                return [() => searchDark(), () => goTo("building"), () => grueDeath(), () => grueDeath()];
+        desc: function() {
+            if (L2[0] >= 9) return Str1;
+            if (L2[0] >= 7) return Str3;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4;
+            
+            if (L1[4] === 1) {
+                L1[4] = 2;
+                L2[0] = Math.max(0, L2[0] - 1);
+                return "DARK ROOM\nYOU LIGHT THE LAMP. THE ROOM IS REVEALED. IT'S A SMALL CHAMBER WITH PASSAGES NORTH, EAST, AND WEST.";
             }
-            return [() => goTo("building"), () => grueDeath(), () => grueDeath()];
-        } else {
-            if (F === 66) return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building"), () => goTo("mystery")];
-            return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building")];
+            
+            if (L1[4] < 2) {
+                L2[0] = Math.min(10, L2[0] + 2);
+                return "DARK ROOM\nTHIS ROOM IS PITCH BLACK. YOU HEAR DRIPPING WATER. YOU ARE LIKELY TO BE EATEN BY A GRUE.";
+            }
+            
+            return "DARK ROOM\nTHE LAMP ILLUMINATES THE ROOM. PASSAGES LEAD NORTH, EAST, AND WEST.";
+        },
+        options: function() {
+            if (L1[4] < 2) {
+                if (L1[5] === 0) return ["SEARCH", "WEST", "NORTH", "EAST"];
+                return ["WEST", "NORTH", "EAST"];
+            } else {
+                if (F === 66) return ["NORTH", "EAST", "WEST", "???"];
+                return ["NORTH", "EAST", "WEST"];
+            }
+        },
+        actions: function() {
+            if (L1[4] < 2) {
+                if (L1[5] === 0) {
+                    return [() => searchDark(), () => goTo("building"), () => grueDeath(), () => grueDeath()];
+                }
+                return [() => goTo("building"), () => grueDeath(), () => grueDeath()];
+            } else {
+                if (F === 66) return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building"), () => goTo("mystery")];
+                return [() => goTo("storage"), () => goTo("treasureVault"), () => goTo("building")];
+            }
         }
-    }
     },
-storage: {
-    name: "STORAGE ROOM",
-    desc: function() {
-        let base = "STORAGE ROOM\nOLD CRATES AND\nBARRELS FILL THIS\nROOM. SPIDERWEBS\nCOVER EVERYTHING.\nTHERE IS A SAFE WITH\nA 3-DIGIT LOCK.";
-        if (L2[0] >= 9) return Str1 + "\n\n" + base;
-        if (L2[0] >= 7) return Str3 + "\n\n" + base;
-        if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
-        return base;
+    storage: {
+        name: "STORAGE ROOM",
+        desc: function() {
+            // LAMP CHECK FIRST - if no lamp lit, you die
+            if (L1[4] < 2) {
+                return "THE GRUE DEVOURS YOU IN THE DARKNESS.";
+            }
+            let base = "STORAGE ROOM\nOLD CRATES AND BARRELS FILL THIS ROOM. SPIDERWEBS COVER EVERYTHING. THERE IS A SAFE WITH A 3-DIGIT LOCK.";
+            if (L2[0] >= 9) return Str1 + "\n\n" + base;
+            if (L2[0] >= 7) return Str3 + "\n\n" + base;
+            if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
+            return base;
+        },
+        options: function() {
+            // If no lamp, death is handled in desc, but we need to prevent options
+            if (L1[4] < 2) {
+                return ["..."];
+            }
+            if (L1[6] === 1) return ["EAST", "SOUTH"];
+            return ["EAST", "SOUTH", "ENTER CODE"];
+        },
+        actions: function() {
+            if (L1[4] < 2) {
+                return [() => grueDeath()];
+            }
+            if (L1[6] === 1) {
+                return [() => goTo("treasureVault"), () => goTo("darkRoom")];
+            }
+            return [() => goTo("treasureVault"), () => goTo("darkRoom"), () => openSafe()];
+        }
     },
-    options: function() {
-        // If lamp isn't lit (L1[4] < 2), grue gets you
-        if (L1[4] < 2) {
-            return ["..."]; // No options, death incoming
-        }
-        if (L1[6] === 1) return ["EAST", "SOUTH"];
-        return ["EAST", "SOUTH", "ENTER CODE"];
-    },
-    actions: function() {
-        if (L1[4] < 2) {
-            return [() => grueDeath()];
-        }
-        if (L1[6] === 1) {
-            return [() => goTo("treasureVault"), () => goTo("darkRoom")];
-        }
-        return [() => goTo("treasureVault"), () => goTo("darkRoom"), () => openSafe()];
-    }
-},
     treasureVault: {
         name: "TREASURE VAULT",
         desc: function() {
-            let base = "TREASURE VAULT\nA SMALL CHAMBER WITH\nA LARGE SAFE ON THE\nWALL.\nIT NEEDS A\n3-DIGIT CODE.";
+            let base = "TREASURE VAULT\nA SMALL CHAMBER WITH A LARGE SAFE ON THE WALL. IT NEEDS A 3-DIGIT CODE.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -805,9 +1176,9 @@ storage: {
         desc: function() {
             let base = "";
             if (L1[6] === 1) {
-                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A\nDARK PIT IN THE CENTER.\nIT CRAVES SOMETHING.\nTHE CRYSTAL KEY PULSES.";
+                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A DARK PIT IN THE CENTER. IT CRAVES SOMETHING. THE CRYSTAL KEY PULSES.";
             } else {
-                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A\nDARK PIT IN THE CENTER.\nIT CRAVES SOMETHING.";
+                base = "ALTAR OF SACRIFICE\nA STONE ALTAR WITH A DARK PIT IN THE CENTER. IT CRAVES SOMETHING.";
             }
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
@@ -829,7 +1200,7 @@ storage: {
     aquarium: {
         name: "EMPTY AQUARIUM",
         desc: function() {
-            let base = "EMPTY AQUARIUM\nENDLESS TANKS STRETCH\nINTO THE DARKNESS.\nNO WATER. NO FISH.\nJUST GLASS AND SILENCE.\nSOMETHING WATCHES.";
+            let base = "EMPTY AQUARIUM\nENDLESS TANKS STRETCH INTO THE DARKNESS. NO WATER. NO FISH. JUST GLASS AND SILENCE. SOMETHING WATCHES.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -840,14 +1211,14 @@ storage: {
     },
     devRoom: {
         name: "DEVELOPER ROOM",
-        desc: "WELCOME, TRAVELER!\n\nYOU FOUND THE SECRET\nROOM. HAVE SOME STUFF:\n\nA SIGN SAYS:\n'THE GRUE WAS HERE'\n'BEAR > ALL'\n'42 IS NOT THE ANSWER'\n'SEND MORE COFFEE'\n\nTHERE'S A CHEST WITH\nA NOTE INSIDE:\n'YOU'RE A TRUE\nEXPLORER. ENJOY\nTHIS SHINY PEPE COIN.'\n\nOH LOOK, A FREE\nCRYSTAL KEY! (BUT\nYOU PROBABLY ALREADY\nHAVE ONE...)",
+        desc: "WELCOME, TRAVELER!\n\nYOU FOUND THE SECRET ROOM. HAVE SOME STUFF:\n\nA SIGN SAYS:\n'THE GRUE WAS HERE'\n'BEAR > ALL'\n'42 IS NOT THE ANSWER'\n'SEND MORE COFFEE'\n\nTHERE'S A CHEST WITH A NOTE INSIDE:\n'YOU'RE A TRUE EXPLORER. ENJOY THIS SHINY PEPE COIN.'\n\nOH LOOK, A FREE CRYSTAL KEY! (BUT YOU PROBABLY ALREADY HAVE ONE...)",
         options: () => ["EAST"],
         actions: () => [() => { L1[6]=1; goTo("deadEnd"); }]
     },
     officeBuilding: {
         name: "OFFICE BUILDING",
         desc: function() {
-            let base = "OFFICE BUILDING\nCUBICLES STRETCH\nINTO INFINITY.\nA PRINTER HUMS.\nA COFFEE MACHINE\nBREWS ENDLESSLY.\nSOMETHING MOVES\nIN THE VENTS.";
+            let base = "OFFICE BUILDING\nCUBICLES STRETCH INTO INFINITY. A PRINTER HUMS. A COFFEE MACHINE BREWS ENDLESSLY. SOMETHING MOVES IN THE VENTS.";
             if (L2[0] >= 9) return Str1 + "\n\n" + base;
             if (L2[0] >= 7) return Str3 + "\n\n" + base;
             if (L2[0] >= 5 && Math.random() < 0.33) return Str4 + "\n\n" + base;
@@ -859,14 +1230,14 @@ storage: {
     cubicle: {
         name: "CUBICLE",
         desc: function() {
-            let desc = "A CUBICLE WITH A\nDESK. A NOTE SAYS:\n'THE BEAR HAS YOUR\nRESERVATION.'";
+            let desc = "A CUBICLE WITH A DESK. A NOTE SAYS: 'THE BEAR HAS YOUR RESERVATION.'";
             if (L1[10] === 0) {
-                desc += "\nA CALCULATOR SITS\nON THE DESK.";
+                desc += "\nA CALCULATOR SITS ON THE DESK.";
             } else {
-                desc += "\nTHE DESK IS EMPTY.\nTHE CALCULATOR IS\nGONE.";
+                desc += "\nTHE DESK IS EMPTY. THE CALCULATOR IS GONE.";
             }
             if (Math.random() < 1/7) {
-                desc += "\n\nA COWORKER GRABS YOU!\n'YOU'RE LATE FOR THE\nMEETING!' THEY DRAG\nYOU INTO A CONFERENCE\nROOM. YOU ARE NEVER\nSEEN AGAIN.";
+                desc += "\n\nA COWORKER GRABS YOU! 'YOU'RE LATE FOR THE MEETING!' THEY DRAG YOU INTO A CONFERENCE ROOM. YOU ARE NEVER SEEN AGAIN.";
                 return desc;
             }
             return desc;
@@ -877,7 +1248,7 @@ storage: {
         },
         actions: function() {
             if (L1[10] === 0) {
-                return [() => { L1[10]=1; showMessage("YOU TAKE THE OFFICE\nCALCULATOR. IT HAS\nA STICKER: 'PROPERTY\nOF SMITH'"); goTo("cubicle"); }, () => goTo("officeBuilding")];
+                return [() => { L1[10]=1; showMessage("YOU TAKE THE OFFICE CALCULATOR. IT HAS A STICKER: 'PROPERTY OF SMITH'"); goTo("cubicle"); }, () => goTo("officeBuilding")];
             } else {
                 return [() => goTo("officeBuilding")];
             }
@@ -887,9 +1258,9 @@ storage: {
         name: "BOSS'S OFFICE",
         desc: function() {
             if (L1[10] === 1) {
-                return "A SUIT BEHIND A DESK.\n'I SEE YOU TOOK THE\nCOMPANY CALCULATOR.'\nHE SMILES.\n'YOU'RE HIRED.'\n\nYOU NOW WORK HERE.\nFOREVER. IN THE\nINFINITE OFFICE.\nTHE GRUE IS YOUR\nCOWORKER.";
+                return "A SUIT BEHIND A DESK.\n'I SEE YOU TOOK THE COMPANY CALCULATOR.'\nHE SMILES.\n'YOU'RE HIRED.'\n\nYOU NOW WORK HERE. FOREVER. IN THE INFINITE OFFICE. THE GRUE IS YOUR COWORKER.";
             } else {
-                return "THE BOSS'S OFFICE\nA SUIT BEHIND A DESK.\n'YOU DON'T WORK HERE.'\nSECURITY ESCORTS YOU\nBACK TO THE CUBICLES.";
+                return "THE BOSS'S OFFICE\nA SUIT BEHIND A DESK. 'YOU DON'T WORK HERE.' SECURITY ESCORTS YOU BACK TO THE CUBICLES.";
             }
         },
         options: function() {
@@ -908,9 +1279,9 @@ storage: {
         name: "CLEARING",
         desc: function() {
             if (L1[9] === 0) {
-                return "CLEARING\nA SMALL SUNNY\nCLEARING. YOU NOTICE\nA STRANGE SPINNING\nDEVICE IN THE CENTER.";
+                return "CLEARING\nA SMALL SUNNY CLEARING. YOU NOTICE A STRANGE SPINNING DEVICE IN THE CENTER.";
             } else {
-                return "CLEARING\nA SMALL SUNNY\nCLEARING. THE SPINNER\nHAS GONE SILENT.\nA PATH LEADS NW.";
+                return "CLEARING\nA SMALL SUNNY CLEARING. THE SPINNER HAS GONE SILENT. A PATH LEADS NW.";
             }
         },
         options: function() {
@@ -927,47 +1298,250 @@ storage: {
     },
     spinner: {
         name: "THE SPINNER",
-        desc: "A MYSTERIOUS MACHINE\nWITH A SPINNING ARROW.\nIT HUMS WITH ENERGY.",
+        desc: "A MYSTERIOUS MACHINE WITH A SPINNING ARROW. IT HUMS WITH ENERGY.",
         options: () => ["SPIN THE WHEEL", "LEAVE"],
         actions: () => [() => spinWheel(), () => goTo("clearing")]
     },
     smithOffice: {
         name: "SMITH'S OFFICE",
-        desc: "HE POINTS TO A DOOR.\nBEYOND IT IS DAYLIGHT.",
-        options: () => ["LEAVE"],
+        desc: "HE POINTS TO A DOOR. BEYOND IT IS DAYLIGHT.",
+        options: () => ["LEAVE (epilepsy & flash warning)"],
         actions: () => [() => goTo("escapeEnd")]
     },
     escapeEnd: {
-        name: "THE END",
-        desc: "YOU STEP THROUGH.\nTHE SUN WARMS YOUR FACE.\nYOU ARE FREE.\n\n...OR ARE YOU?",
-        options: () => ["RESTART"],
-        actions: () => [() => resetGame()]
+        name: "",
+        desc: "",
+        options: () => [],
+        actions: () => []
+    },
+    mapleStreet: {
+        name: "MAPLE STREET",
+        desc: "YOU STAND ON A QUIET SUBURBAN STREET. THE HOUSES ARE EMPTY. THE AIR IS STILL. YOU FEEL LIKE YOU LIVED HERE ONCE. 680, 682, AND 684 LINE THE NORTH SIDE. EAST LIES A SCHOOL. TO THE WEST IS A BASEMENT.",
+        options: () => ["HOUSE 680", "HOUSE 682", "HOUSE 684", "SCHOOL", "BASEMENT"],
+        actions: () => [() => goTo("house680"), () => goTo("lockedHouse"), () => goTo("lockedHouse"), () => goTo("school"), () => goTo("basementDeath")]
+    },
+    house680: {
+        name: "HOUSE 680",
+        desc: "THE DOOR CREAKS OPEN. YOU STEP INTO A DUSTY ENTRY HALL. THE AIR SMELLS LIKE FORGOTTEN BIRTHDAYS. A LIVING ROOM LIES TO THE NORTH. A DINING ROOM IS TO THE EAST.",
+        options: () => ["NORTH", "EAST", "WEST", "UP", "OUT"],
+        actions: () => [() => goTo("livingRoom"), () => goTo("diningRoom"), () => goTo("kitchenHome"), () => goTo("upstairs"), () => goTo("mapleStreet")]
+    },
+    livingRoom: {
+        name: "LIVING ROOM",
+        desc: function() {
+            let desc = "A COUCH SITS COVERED IN A WHITE SHEET. A STONE MANTEL HOLDS A SINGLE PHOTOGRAPH. A CALENDAR HANGS ON THE WALL. A DATE IS CIRCLED IN RED. THE YEAR HAS FADED AWAY.";
+            if (L1[0] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+            return desc;
+        },
+        options: () => ["PHOTO", "CALENDAR", "BACK"],
+        actions: () => [() => readPhoto(), () => goTo("livingRoom"), () => goTo("house680")]
+    },
+    diningRoom: {
+        name: "DINING ROOM",
+        desc: "A LONG WOODEN TABLE WITH FOUR CHAIRS. A CRACKED CHANDELIER HANGS ABOVE. DISHES ARE STILL SET OUT, COVERED IN A THICK LAYER OF DUST.",
+        options: () => ["BACK"],
+        actions: () => [() => goTo("house680")]
+    },
+    kitchenHome: {
+        name: "KITCHEN",
+        desc: function() {
+            if (L1[1] === 0) {
+                return "RUSTY POTS HANG FROM HOOKS ON THE WALL. THE KITCHEN SMELLS FAMILIAR. A SMALL WOODEN BOX SITS ON THE COUNTER. YOU SWEAR THAT YOU SAW NUMBERS.";
+            } else {
+                return "THE BOX IS EMPTY.";
+            }
+        },
+        options: function() {
+            if (L1[1] === 0) return ["OPEN BOX", "BACK"];
+            return ["BACK"];
+        },
+        actions: function() {
+            if (L1[1] === 0) {
+                return [() => openBoxHome(), () => goTo("house680")];
+            } else {
+                return [() => goTo("house680")];
+            }
+        }
+    },
+    openBoxHome() {
+        L1[1] = 1;
+        showMessage("YOU PRY OPEN THE LID. INSIDE, RESTING ON A BED OF VELVET, IS A SMALL RUSTY KEY. IT LOOKS LIKE IT MIGHT FIT THE ATTIC DOOR UPSTAIRS.", "kitchenHome");
+    },
+    upstairs: {
+        name: "UPPER HALLWAY",
+        desc: "A SHORT HALLWAY WITH THREE DOORS. A BEDROOM IS TO THE NORTH. ANOTHER BEDROOM IS TO THE EAST. A BATHROOM IS TO THE SOUTH. THE ATTIC IS TO THE WEST, BUT THE DOOR IS LOCKED. STAIRS GO DOWN.",
+        options: () => ["NORTH", "EAST", "SOUTH", "WEST", "DOWN"],
+        actions: () => [() => goTo("bedroom1"), () => goTo("bedroom2"), () => goTo("bathroomUp"), () => goTo("attic"), () => goTo("house680")]
+    },
+    bedroom1: {
+        name: "BEDROOM 1",
+        desc: function() {
+            let desc = "A TWIN BED WITH OLD, MUSTY SHEETS. A SMALL DESK SITS AGAINST THE WALL. A JOURNAL LIES OPEN ON THE DESK. POSTERS HANG ON THE WALLS, BUT YOU DO NOT RECOGNIZE THE BANDS.";
+            if (L1[2] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+            return desc;
+        },
+        options: () => ["READ JOURNAL", "BACK"],
+        actions: () => [() => readJournal(), () => goTo("upstairs")]
+    },
+    readJournal() {
+        if (L1[2] === 0) L1[2] = 1;
+        showMessage("MOST OF THE PAGES HAVE BEEN TORN OUT. ONE PAGE REMAINS, TATTERED AND FOLDED. IT READS:\n'I DREW THE MAP MYSELF. THE GRUE ISN'T REAL. IT'S JUST A STORY TO KEEP US FROM LEAVING. I FOUND THE DOOR BEHIND THE ALTAR. TOMORROW I ESCAPE.' THE DATE ON THE PAGE IS THREE YEARS AGO. YOU NEVER LEFT.", "bedroom1");
+    },
+    bedroom2: {
+        name: "BEDROOM 2",
+        desc: function() {
+            let desc = "A SMALLER ROOM. A CHILD'S BED. A TOY CHEST SITS IN THE CORNER.";
+            if (L1[3] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+            return desc;
+        },
+        options: () => ["OPEN CHEST", "BACK"],
+        actions: () => [() => openChest(), () => goTo("upstairs")]
+    },
+    openChest() {
+        if (L1[3] === 0) L1[3] = 1;
+        showMessage("INSIDE ARE OLD STUFFED ANIMALS. A HANDMADE DOLL WITH A BUTTON EYE MISSING. A NOTE IS TUCKED BENEATH THEM:\n'FOR THOMAS, AGE 7. LOVE, GRANDMA.'\n\nSHE NEVER CAME TO YOUR BIRTHDAY THAT YEAR. YOU WAITED BY THE WINDOW FOR HOURS. SHE NEVER CAME BECAUSE SHE WAS ALREADY GONE. YOU NEVER TOLD ANYONE HOW MUCH IT HURT.", "bedroom2");
+    },
+    bathroomUp: {
+        name: "BATHROOM",
+        desc: "A TUB WITH A RUSTY FAUCET. A MEDICINE CABINET ON THE WALL. OLD BOTTLES. A TOOTHBRUSH. NOTHING USEFUL HERE.",
+        options: () => ["BACK"],
+        actions: () => [() => goTo("upstairs")]
+    },
+    attic: {
+        name: "ATTIC",
+        desc: function() {
+            if (L1[1] === 1) {
+                let desc = "DUSTY BOXES AND OLD TOYS. A LETTER SITS ON TOP OF A CRATE. YOU OPEN IT. THE PAPER IS YELLOWED. IT READS:\n'COME HOME, THOMAS. YOUR ROOM IS JUST HOW YOU LEFT IT. THE DOOR IS ALWAYS OPEN.'\n\nBUT YOU KEEP WALKING PAST. WHY WON'T YOU COME HOME?' THE HANDWRITING IS YOUR MOTHER'S. YOU RECOGNIZE IT FROM ALL THE CARDS YOU NEVER OPENED.";
+                if (L1[4] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+                return desc;
+            } else {
+                return "THE DOOR IS LOCKED TIGHT. YOU NEED A KEY.";
+            }
+        },
+        options: () => ["BACK"],
+        actions: () => [() => goTo("upstairs")]
+    },
+    lockedHouse: {
+        name: "HOUSE LOCKED",
+        desc: "THE DOOR IS LOCKED. MAYBE LATER...",
+        options: () => ["BACK"],
+        actions: () => [() => goTo("mapleStreet")]
+    },
+    school: {
+        name: "SCHOOL",
+        desc: "A BOARDED-UP BUILDING. ONE DOOR HANGS OPEN. INSIDE SMELLS LIKE DUST AND OLD PAPER.",
+        options: () => ["ENTER", "BACK"],
+        actions: () => [() => goTo("schoolHall"), () => goTo("mapleStreet")]
+    },
+    schoolHall: {
+        name: "DARK HALLWAY",
+        desc: "LOCKERS LINE BOTH SIDES, THEIR DOORS HANGING OPEN LIKE EMPTY MOUTHS. A FAINT LIGHT FLICKERS FROM BENEATH A DOOR LABELED COMPUTER LAB. TO THE WEST IS THE PRINCIPAL'S OFFICE.",
+        options: () => ["NORTH", "WEST", "LEAVE"],
+        actions: () => [() => goTo("computerLab"), () => goTo("principalOffice"), () => goTo("school")]
+    },
+    computerLab: {
+        name: "COMPUTER LAB",
+        desc: function() {
+            let desc = "ROWS OF DUSTY MONITORS SIT IN THE STILL DARK. ONE SCREEN GLOWS SOFTLY, CASTING LONG SHADOWS. A LOGIN PROMPT BLINKS.";
+            if (L1[6] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+            return desc;
+        },
+        options: () => ["LOG IN", "BACK"],
+        actions: () => [() => promptLogin(), () => goTo("schoolHall")]
+    },
+    principalOffice: {
+        name: "PRINCIPAL'S OFFICE",
+        desc: function() {
+            if (L1[5] === 1) {
+                return "YOU'VE BEEN HERE BEFORE. THE PRINCIPAL'S CHAIR IS EMPTY. A FILE CABINET SITS IN THE CORNER. THE DRAWER IS OPEN. INSIDE, THERE IS NOTHING BUT DUST.";
+            } else {
+                return "A WOODEN DESK. A LEATHER CHAIR. A FILE CABINET IN THE CORNER. ON THE WALL, A PHOTO OF THE PRINCIPAL SHAKING HANDS WITH MR. SMITH. THE CABINET IS LABELED 'STOCK'.";
+            }
+        },
+        options: function() {
+            if (L1[5] === 1) return ["EAST"];
+            return ["DESK", "CABINET", "EAST"];
+        },
+        actions: function() {
+            if (L1[5] === 1) {
+                return [() => goTo("schoolHall")];
+            } else {
+                return [() => goTo("principalDesk"), () => goTo("principalCabinet"), () => goTo("schoolHall")];
+            }
+        }
+    },
+    principalDesk: {
+        name: "THE DESK",
+        desc: function() {
+            let desc = "A SINGLE SHEET OF PAPER.\n'THOMAS STOCK - BEHAVIORAL CONCERN'\n'RECOMMENDED EVALUATION'\n'STUDENT REFUSED'\n'CONTACT MR. SMITH'";
+            if (F === 66) {
+                desc += "\n\nA SECOND PAGE.\n'THE GRUE IS A SECURITY SYSTEM. DO NOT INTERFERE'\n- SMITH";
+            }
+            return desc;
+        },
+        options: () => ["BACK"],
+        actions: () => [() => goTo("principalOffice")]
+    },
+    principalCabinet: {
+        name: "FILE CABINET",
+        desc: function() {
+            if (L1[5] === 0) {
+                L1[5] = 1;
+                let desc = "YOU PULL OPEN THE DRAWER. INSIDE, SEVERAL FOLDERS ARE ALL LABELED 'STOCK'.\n\nTHOMAS STOCK - AGE 12\n'BEHAVIORAL CONCERNS'\n'CLAIMS TO HAVE FOUND A DOOR BEHIND THE ALTAR'\n\nMARGARET STOCK - MOTHER\n'REPORTED SON MISSING'\n'REPEATED CALLS TO SCHOOL, NO RESPONSE. FILE CLOSED.'\n\nDAVID STOCK - FATHER\n'LEFT FAMILY 2 YEARS PRIOR TO DISAPPEARANCE'\n'NO FORWARDING ADDRESS'\n'WHEREABOUTS UNKNOWN'";
+                if (L1[0] === 0) desc += "\n\n[MEMORY FRAGMENT]";
+                return desc;
+            } else {
+                return "THE CABINET IS EMPTY.";
+            }
+        },
+        options: () => ["BACK"],
+        actions: () => [() => goTo("principalOffice")]
+    },
+    basementDeath: {
+        name: "BASEMENT",
+        desc: "YOU ACCIDENTALLY TRIP ON THE STAIRS AND DIE. WHAT A BAD WAY TO GO...",
+        options: () => ["CONTINUE"],
+        actions: () => [() => { L2[1]++; saveGame(); resetGame(); }]
     }
 };
 
 // ===== TYPING EFFECT =====
+function getTypingDelay() {
+    let delay = 20;
+    if (settings.typingSpeed === 'slow') delay = 32;
+    else if (settings.typingSpeed === 'fast') delay = 6;
+
+    const sanity = L2[0];
+    if (sanity >= 8) delay = Math.max(5, delay - 5);
+    else if (sanity >= 6) delay = Math.max(8, delay - 2);
+    return delay;
+}
+
 function typeText(text, callback) {
     if (typingInterval) {
         clearInterval(typingInterval);
         typingInterval = null;
     }
     const descEl = document.getElementById('description');
-    let index = 0;
-    descEl.textContent = '';
-    
     const sanity = L2[0];
-    let speed = 15;
-    if (sanity >= 8) speed = 6;
-    else if (sanity >= 6) speed = 10;
-    
+
     // Save for ghost text
     previousDescription = text;
-    document.getElementById('ghostText').textContent = text;
-    
+    document.getElementById('ghostText').textContent = settings.glitchEffects ? text : '';
+
+    if (!settings.typingAnimation) {
+        descEl.textContent = text;
+        if (callback) callback();
+        return;
+    }
+
+    let index = 0;
+    descEl.textContent = '';
+
     typingInterval = setInterval(() => {
         if (index < text.length) {
             let char = text.charAt(index);
-            
+
             // Text decay - random symbols at high sanity
             if (sanity >= 7 && Math.random() < 0.04) {
                 char = String.fromCharCode(33 + Math.random() * 94);
@@ -986,7 +1560,7 @@ function typeText(text, callback) {
             typingInterval = null;
             if (callback) callback();
         }
-    }, speed);
+    }, getTypingDelay());
 }
 
 function setMenuHidden() {
@@ -1056,6 +1630,10 @@ function render() {
         showMainMenu();
         return;
     }
+    if (currentLocation === "escapeEnd") {
+        dramaticEscape();
+        return;
+    }
     const loc = locations[currentLocation];
     if (!loc) {
         document.getElementById('locationName').textContent = "ERROR";
@@ -1090,6 +1668,8 @@ function render() {
         menuDiv.appendChild(btn);
     }
     
+    applyTextSize();
+
     // Type the description, then fade in the buttons
     typeText(descText, () => {
         setMenuVisible();
@@ -1103,34 +1683,73 @@ function render() {
 function feedBear() {
     L1[1] = 1;
     L1[2] = 1;
-    showMessage("YOU OFFER FOOD TO\nTHE BEAR. IT SNIFFS,\nTHEN GOBBLES IT DOWN.\nTHE BEAR IS GRATEFUL\nAND LEAVES SOMETHING\nBEHIND AS IT WANDERS\nOFF INTO THE FOREST.", "bearHangout");
+    showMessage("YOU OFFER FOOD TO THE BEAR. IT SNIFFS, THEN GOBBLES IT DOWN. THE BEAR IS GRATEFUL AND LEAVES SOMETHING BEHIND AS IT WANDERS OFF INTO THE FOREST.", "bearHangout");
 }
 
 function bearDeathAnnoyed() {
-    showMessage("THE BEAR IS ANNOYED.\nHE TELLS YOU SO BY\nTEARING YOUR HEAD\nOFF. YOU ARE DEAD.");
+    showMessage("THE BEAR IS ANNOYED. HE TELLS YOU SO BY TEARING YOUR HEAD OFF. YOU ARE DEAD.");
     L2[1]++;
     saveGame();
 }
 
 function bearDeathChase() {
-    showMessage("THE BEAR CHASES YOU.\nITS MASSIVE PAWS\nPOUND THE GROUND. IT\nCATCHES YOU EASILY.\nYOU ARE DEAD.");
+    showMessage("THE BEAR CHASES YOU. ITS MASSIVE PAWS POUND THE GROUND. IT CATCHES YOU EASILY. YOU ARE DEAD.");
     L2[1]++;
     saveGame();
 }
 
 function openBox() {
     L1[3] = 1;
-    showMessage("YOU OPEN THE BOX.\nINSIDE IS A SHINY\nSILVER COIN AND A\nNOTE THAT READS:\n'TREASURE LIES EAST,\nBUT BEWARE THE DARK'", "kitchen");
+    showMessage("YOU OPEN THE BOX. INSIDE IS A SHINY SILVER COIN AND A NOTE THAT READS: 'TREASURE LIES EAST, BUT BEWARE THE DARK'", "kitchen");
 }
-
+function goToSuburbs() {
+    L1 = new Array(25).fill(0);
+    Z = 1;
+    F = Math.floor(Math.random() * 100) + 1;
+    P = Math.floor(Math.random() * 900) + 100;
+    
+    // Start at max sanity and gradually decrease over 6.66 seconds
+    L2[0] = 10;
+    
+    // Clear any existing sanity decrease
+    if (sanityDecreaseInterval) {
+        clearInterval(sanityDecreaseInterval);
+    }
+    
+    const startSanity = 10;
+    const endSanity = 0;
+    const duration = 6660; // 6.66 seconds in milliseconds
+    const startTime = Date.now();
+    const updateInterval = 50; // Update every 50ms for smooth transitions
+    
+    sanityDecreaseInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Linear interpolation from 10 to 0
+        L2[0] = Math.max(0, Math.round((1 - progress) * startSanity + progress * endSanity));
+        
+        updateCorruption();
+        saveGame();
+        
+        if (progress >= 1) {
+            clearInterval(sanityDecreaseInterval);
+            sanityDecreaseInterval = null;
+        }
+    }, updateInterval);
+    
+    currentLocation = "mapleStreet";
+    saveGame();
+    render();
+}
 function searchDark() {
     L1[5] = 1;
     L1[4] = 1;
-    showMessage("YOU FEEL AROUND AND\nFIND AN OIL LAMP.\nIT IS FULL OF OIL.\nYOU CAN LIGHT IT.", "darkRoom");
+    showMessage("YOU FEEL AROUND AND FIND AN OIL LAMP. IT IS FULL OF OIL. YOU CAN LIGHT IT.", "darkRoom");
 }
 
 function grueDeath() {
-    showMessage("IN THE PITCH BLACK,\nYOU HEAR A SLITHERING\nSOUND. SUDDENLY, A\nGRUE DEVOURS YOU.\nYOU ARE DEAD.");
+    showMessage("IN THE PITCH BLACK, YOU HEAR A SLITHERING SOUND. SUDDENLY, A GRUE DEVOURS YOU. YOU ARE DEAD.");
     L2[1]++;
     saveGame();
 }
@@ -1140,16 +1759,16 @@ function openSafe() {
     if (parseInt(code) === P) {
         L1[6] = 1;
         L1[11] = 0;
-        showMessage("THE SAFE CLICKS OPEN.\nINSIDE IS A GLEAMING\nCRYSTAL KEY.", "storage");
+        showMessage("THE SAFE CLICKS OPEN. INSIDE IS A GLEAMING CRYSTAL KEY.", "storage");
     } else {
         if (F === 77 && L1[11] === 1) {
             L1[11] = 2;
-            showMessage("THE CODE IS WRONG, BUT\nTHE SAFE SEEMS\nLUCKY TODAY.\nTRY AGAIN?", "storage");
+            showMessage("THE CODE IS WRONG, BUT THE SAFE SEEMS LUCKY TODAY. TRY AGAIN?", "storage");
         } else if (F === 77 && L1[11] === 0) {
             L1[11] = 1;
-            showMessage("THE CODE IS WRONG, BUT\nTHE SAFE SEEMS\nLUCKY TODAY.\nTRY AGAIN?", "storage");
+            showMessage("THE CODE IS WRONG, BUT THE SAFE SEEMS LUCKY TODAY. TRY AGAIN?", "storage");
         } else {
-            showMessage("WRONG CODE.\nA LOUD CLICK IS HEARD.\nTHE SAFE EXPLODES!\nSHARDS OF METAL FLY\nEVERYWHERE. YOU ARE\nKILLED INSTANTLY.");
+            showMessage("WRONG CODE. A LOUD CLICK IS HEARD. THE SAFE EXPLODES! SHARDS OF METAL FLY EVERYWHERE. YOU ARE KILLED INSTANTLY.");
             L2[1]++;
             saveGame();
         }
@@ -1157,7 +1776,7 @@ function openSafe() {
 }
 
 function sacrificeKey() {
-    showMessage("YOU PLACE THE CRYSTAL\nKEY ON THE ALTAR.\nIT GLOWS... THEN...\nTHE ALTAR OPENS.\nA DOOR APPEARS.\nBEYOND IT IS AN AQUARIUM.", "aquarium");
+    showMessage("YOU PLACE THE CRYSTAL KEY ON THE ALTAR. IT GLOWS... THEN... THE ALTAR OPENS. A DOOR APPEARS. BEYOND IT IS AN AQUARIUM.", "aquarium");
 }
 
 function goDeeper() {
@@ -1165,33 +1784,31 @@ function goDeeper() {
     
     if (d === 1) {
         // T1: Grue sign
-        showMessage("A SINGLE TANK WITH\nA RUSTY SIGN: 'THE GRUE WAS HERE'", "aquarium");
+        showMessage("A SINGLE TANK WITH A RUSTY SIGN: 'THE GRUE WAS HERE'", "aquarium");
     } else if (d === 2) {
         // T2: Mirror
-        showMessage("A TANK WITH A MIRROR\nYOU SEE YOURSELF.\nYOUR REFLECTION BLINKS.\nYOU DON'T.", "aquarium");
+        showMessage("A TANK WITH A MIRROR. YOU SEE YOURSELF. YOUR REFLECTION BLINKS. YOU DON'T.", "aquarium");
         L2[0] = Math.min(10, L2[0] + 1);
     } else if (d === 3) {
         // T3: Note with FUN value
-        showMessage("A TANK WITH A NOTE:\n" + F, "aquarium");
+        showMessage("A TANK WITH A NOTE: " + F, "aquarium");
         L2[0] = Math.min(10, L2[0] + 1);
     } else if (d === 4) {
-        // T4: Empty room door
-        showMessage("A TANK WITH A DOOR.\nIT OPENS TO EMPTY ROOM.\nJUST MORE TANKS.", "aquarium");
+        showMessage("A TANK WITH A DOOR. IT OPENS TO EMPTY ROOM. JUST MORE TANKS.", "aquarium");
     } else if (d === 5) {
         // T5: Fish
-        showMessage("A TANK WITH A FISH.\nBUT THERE'S NO WATER.\nIT FLOATS IN AIR.", "aquarium");
+        showMessage("A TANK WITH A FISH. BUT THERE'S NO WATER. IT FLOATS IN THE AIR.\n IT WHISPERS TO YOU: 'THE BEAR KNOWS.'", "aquarium");
         L2[0] = Math.min(10, L2[0] + 1);
-        // In TI-BASIC, T5 shows "WATCH" and "LEAVE" - we simplified to just a message
     } else if (d === 6) {
         // T6: Ladder → storage room
-        showMessage("A TANK WITH A LADDER.\nIT GOES DOWN INTO\nTHE DARKNESS.", "storage");
+        showMessage("A TANK WITH A LADDER. IT GOES DOWN INTO THE DARKNESS.", "storage");
         L2[0] = Math.min(10, L2[0] + 1);
     } else if (d === 7) {
         // T7: Cracked glass - choice
         pendingLocation = "aquarium";
         const menuDiv = document.getElementById('menu');
         document.getElementById('locationName').textContent = "";
-        document.getElementById('description').textContent = "A TANK WITH NOTHING.\nBUT THE GLASS IS CRACKED.\nBEYOND IT IS A LIGHT.";
+        document.getElementById('description').textContent = "A TANK WITH NOTHING. BUT THE GLASS IS CRACKED. BEYOND IT IS A LIGHT.";
         setMenuHidden();
         menuDiv.innerHTML = '';
         
@@ -1199,7 +1816,7 @@ function goDeeper() {
         btn1.className = 'menu-btn';
         btn1.textContent = "REACH THROUGH";
         btn1.onclick = function() {
-            showMessage("YOU REACH THROUGH...\n\nYOUR HAND TOUCHES\nSOMETHING COLD.\nA VOICE SAYS:\n'YOU FOUND ME.'", "smithOffice");
+            showMessage("YOU REACH THROUGH...\n\nYOUR HAND TOUCHES SOMETHING COLD. A VOICE SAYS: 'YOU FOUND ME.'", "smithOffice");
             L2[0] = Math.min(10, L2[0] + 1);
         };
         menuDiv.appendChild(btn1);
@@ -1219,17 +1836,17 @@ function goDeeper() {
         return;
     } else if (d === 8) {
         // SM: Direct to Smith's office
-        showMessage("SMITH'S OFFICE\nA MAN SITS AT A DESK.\nHE WEARS A SUIT.\n'I KNEW YOU'D COME.'\n\n'THE KEY WAS ALWAYS\nMEANT TO BE SACRIFICED.'\n'NOW YOU CAN LEAVE.'\n\nHE POINTS TO A DOOR.\nBEYOND IT IS DAYLIGHT.", "smithOffice");
+        showMessage("SMITH'S OFFICE\nA MAN SITS AT A DESK. HE WEARS A SUIT. 'I KNEW YOU'D COME.'\n\n'THE KEY WAS ALWAYS MEANT TO BE SACRIFICED.'\n'NOW YOU CAN LEAVE.'\n\nHE POINTS TO A DOOR. BEYOND IT IS DAYLIGHT.", "smithOffice");
         L2[0] = Math.min(10, L2[0] + 3);
     }
 }
 
 function examineTank() {
-    showMessage("YOU PRESS YOUR FACE\nAGAINST THE GLASS.\nCOLD. EMPTY.\nSOMETHING PRESSES BACK.", "aquarium");
+    showMessage("YOU PRESS YOUR FACE AGAINST THE GLASS. COLD. EMPTY. SOMETHING PRESSES BACK.", "aquarium");
 }
 
 function listen() {
-    showMessage("SILENCE.\nJUST THE HUM OF\nFLUORESCENT LIGHTS.\nA DRIP. SOMEWHERE.\nBUT THERE'S NO WATER.", "aquarium");
+    showMessage("SILENCE. JUST THE HUM OF FLUORESCENT LIGHTS. A DRIP. SOMEWHERE. BUT THERE'S NO WATER.", "aquarium");
 }
 
 function mysteryRoom() {
@@ -1242,12 +1859,12 @@ function mysteryRoom() {
 function getCoffee() {
     let r = Math.floor(Math.random() * 4) + 1;
     if (r === 1) {
-        showMessage("THE COFFEE BURNS\nYOUR THROAT. IT WAS\nNOT COFFEE. IT WAS\nLIQUID GRUE. YOU\nDISSOLVE FROM WITHIN.");
+        showMessage("THE COFFEE BURNS YOUR THROAT. IT WAS NOT COFFEE. IT WAS LIQUID GRUE. YOU DISSOLVE FROM WITHIN.");
         L2[1]++;
         saveGame();
     } else {
         L2[0] = Math.max(0, L2[0] - 1);
-        showMessage("YOU DRINK. IT'S AWFUL.\nBUT YOU FEEL... CLEARER.", "officeBuilding");
+        showMessage("YOU DRINK. IT'S AWFUL. BUT YOU FEEL... CLEARER.", "officeBuilding");
     }
 }
 
@@ -1255,29 +1872,29 @@ function useElevator() {
     let l = Math.floor(Math.random() * 6) + 1;
     let locs = ["deadEnd", "bearHangout", "kitchen", "officeBuilding", "deadEnd", "fork"];
     if (l === 5) {
-        showMessage("THE ELEVATOR CABLES\nSNAP! YOU PLUMMET\nDOWN THE SHAFT.\nYOU LAND WITH A\nTERRIBLE CRUNCH.");
+        showMessage("THE ELEVATOR CABLES SNAP! YOU PLUMMET DOWN THE SHAFT. YOU LAND WITH A TERRIBLE CRUNCH.");
         L2[1]++;
         saveGame();
     } else {
-        showMessage("THE ELEVATOR DOORS\nOPEN. INSIDE,\nA BEAR IN A SUIT.\n'GOING DOWN?'", locs[l-1]);
+        showMessage("THE ELEVATOR DOORS OPEN. INSIDE, A BEAR IN A SUIT. 'GOING DOWN?'", locs[l-1]);
     }
 }
 
 function checkVents() {
-    showMessage("YOU OPEN THE VENT.\nEYES GLOW INSIDE.\nA GRUE POUNCES!\n'FINALLY, DELIVERY!'\nIT CHOMPS HAPPILY.");
+    showMessage("YOU OPEN THE VENT. EYES GLOW INSIDE. A GRUE POUNCES! 'FINALLY, DELIVERY!' IT CHOMPS HAPPILY.");
     L2[1]++;
     saveGame();
 }
 
 function spinWheel() {
     if (L1[9] === 1) {
-        showMessage("THE SPINNER IS SILENT.\nIT HAS ALREADY BEEN USED.", "clearing");
+        showMessage("THE SPINNER IS SILENT. IT HAS ALREADY BEEN USED.", "clearing");
         return;
     }
     L1[9] = 1;
     let dest = Math.floor(Math.random() * 10) + 1;
     let locs = ["deadEnd", "dirtRoad", "fork", "seRoad", "bearHangout", "neRoad", "building", "storage", "clearing", "darkRoom"];
-    showMessage("THE ARROW SPINS...\n...AND LANDS ON:\n" + locs[dest-1].toUpperCase() + "\n\nYOU FEEL PULLED...", locs[dest-1]);
+    showMessage("THE ARROW SPINS...\n...AND LANDS ON: " + locs[dest-1].toUpperCase() + "\n\nYOU FEEL PULLED...", locs[dest-1]);
 }
 
 function resetGame() {

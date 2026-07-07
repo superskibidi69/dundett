@@ -303,6 +303,69 @@
             border: none;
         }
 
+        .reddit-section {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            border: 1px solid #2a4a2a;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0a1f0a 0%, #0f280f 100%);
+            box-shadow: inset 0 0 0 1px rgba(58, 255, 58, 0.08), 0 0 18px rgba(58, 255, 58, 0.06);
+        }
+
+        .reddit-section h3 {
+            font-size: 0.95rem;
+            color: #6aff6a;
+            text-align: center;
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .reddit-card {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid #2a4a2a;
+            border-radius: 10px;
+            background: rgba(10, 31, 10, 0.8);
+        }
+
+        .reddit-card .subreddit {
+            display: inline-block;
+            color: #3aff3a;
+            font-weight: bold;
+            text-decoration: none;
+            margin-bottom: 0.45rem;
+        }
+
+        .reddit-card .subreddit:hover {
+            text-shadow: 0 0 8px #3aff3a;
+        }
+
+        .reddit-card .meta {
+            color: #6aff6a;
+            font-size: 0.72rem;
+            display: block;
+            line-height: 1.55;
+            margin-top: 0.25rem;
+        }
+
+        .reddit-cta {
+            display: inline-block;
+            margin-top: 0.8rem;
+            padding: 0.7rem 1rem;
+            border: 1px solid #3aff3a;
+            background: #1a2a1a;
+            color: #3aff3a;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .reddit-cta:hover {
+            background: #2a3a2a;
+            box-shadow: 0 0 10px #3aff3a;
+        }
+
         .teaser {
             text-align: left;
             padding: 1rem;
@@ -404,18 +467,34 @@
             <p>You went through the door, and something was born.</p>
         </div>
 
-        <div class="info-section">
-            <p style="font-size:0.85rem;color:#6aff6a;margin-bottom:0.5rem;text-align:center;">
-                <i class="fas fa-envelope"></i> <strong>STAY UPDATED</strong> — Get new version alerts, lore drops, and
-                Grue warnings straight to your inbox.
-            </p>
+<div class="info-section">
+    <p style="font-size:0.85rem;color:#6aff6a;margin-bottom:0.5rem;text-align:center;">
+        <i class="fas fa-envelope"></i> <strong>STAY UPDATED</strong> — Get new version alerts, lore drops, and
+        Grue warnings straight to your inbox.
+    </p>
 
-            <div class="newsletter">
-                <iframe src="https://superskibidi69.substack.com/embed" width="100%" height="320" frameborder="0"
-                    scrolling="no" style="display: block;"></iframe>
-            </div>
-        </div>
-
+    <div class="newsletter">
+        <iframe src="https://superskibidi69.substack.com/embed" width="100%" height="320" frameborder="0"
+            scrolling="no" style="display: block;"></iframe>
+    </div>
+</div>
+<div class="reddit-section">
+    <h3><i class="fab fa-reddit-alien"></i> r/Dundett</h3>
+    <div class="reddit-card">
+        <img src="/media/dundett-banner.png" alt="DUNDETT Banner" loading="lazy" style="width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="font-size:0.85rem;color:#3aff3a;margin-bottom:0.2rem;">
+            <a href="https://www.reddit.com/r/Dundett" target="_blank" rel="noopener noreferrer" class="subreddit">
+                r/Dundett
+            </a>
+            <span class="meta">
+                Share theories, ask questions, suggest fixes and ideas, and discuss the mysteries of DUNDETT with fellow players.
+            </span>
+        </p>
+        <a href="https://www.reddit.com/r/Dundett" class="reddit-cta" target="_blank" rel="noopener noreferrer">
+            <i class="fab fa-reddit-alien"></i> Join the discussion
+        </a>
+    </div>
+</div>
         <div class="quote">
             "Tall royal palms are spaced equidistantly."
         </div>
